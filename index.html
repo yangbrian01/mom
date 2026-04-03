@@ -3,256 +3,251 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>MOM'S JUBILEE | v3.0 Ultra</title>
-  
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Noto+Sans+TC:wght@500;700&display=swap" rel="stylesheet">
-  
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
-  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"></script>
-  
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <title>MOM'S JUBILEE | Spatial OS</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;600;800&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
   <style>
-    :root { --p: #7C3AED; --s: #F472B6; --bg: #0F172A; }
-    body { font-family: 'Plus Jakarta Sans', 'Noto Sans TC', sans-serif; background: var(--bg); color: white; overflow: hidden; height: 100vh; }
+    /* Apple Spatial UI 質感設定 */
+    :root { --glass-bg: rgba(255, 255, 255, 0.15); --glass-border: rgba(255, 255, 255, 0.2); }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Noto Serif TC', sans-serif; background: #000; color: #fff; overflow: hidden; margin: 0; }
     
-    /* 動態漸層背景 */
-    .bg-gradient-anim {
-      position: fixed; inset: 0;
-      background: linear-gradient(125deg, #0F172A 0%, #1E293B 50%, #020617 100%);
-      background-size: 200% 200%; animation: gradientBg 15s ease infinite; z-index: -1;
+    /* 動態流體極光背景 */
+    .aurora-bg {
+      position: fixed; top: -50%; left: -50%; width: 200%; height: 200%;
+      background: radial-gradient(circle at 50% 50%, #4f46e5 0%, transparent 40%),
+                  radial-gradient(circle at 80% 20%, #f43f5e 0%, transparent 40%),
+                  radial-gradient(circle at 20% 80%, #0ea5e9 0%, transparent 40%);
+      filter: blur(80px) saturate(150%);
+      animation: aurora 20s linear infinite alternate; z-index: -2; opacity: 0.6;
     }
-    @keyframes gradientBg { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    @keyframes aurora { 0% { transform: rotate(0deg) scale(1); } 100% { transform: rotate(360deg) scale(1.2); } }
 
-    /* 高級毛玻璃 2.0 */
-    .glass {
-      background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    /* 高階毛玻璃 */
+    .spatial-glass {
+      background: var(--glass-bg); backdrop-filter: blur(40px) saturate(200%); -webkit-backdrop-filter: blur(40px) saturate(200%);
+      border: 1px solid var(--glass-border); box-shadow: 0 30px 60px rgba(0,0,0,0.12);
     }
-    
-    /* 霓虹燈效果 */
-    .neon-border { border: 1px solid rgba(124, 58, 237, 0.5); box-shadow: 0 0 15px rgba(124, 58, 237, 0.3); }
 
-    /* Swiper 客製化 */
-    .swiper { width: 100%; height: 100vh; padding-top: 100px; padding-bottom: 120px; }
-    .swiper-slide { background-position: center; background-size: cover; width: 85%; height: auto; display: flex; justify-content: center; align-items: center; }
+    /* Apple Wallet 票券設計 */
+    .wallet-pass {
+      position: relative; background: #fff; color: #000; border-radius: 20px; padding: 24px;
+      mask-image: radial-gradient(circle at 0px 50%, transparent 12px, black 13px), radial-gradient(circle at 100% 50%, transparent 12px, black 13px);
+      mask-size: 51% 100%, 51% 100%; mask-position: left, right; mask-repeat: no-repeat;
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .wallet-pass::after {
+      content: ''; position: absolute; left: 24px; right: 24px; top: 50%; border-top: 2px dashed rgba(0,0,0,0.1);
+    }
+    .wallet-pass:active { transform: scale(0.95); }
 
-    /* 3D 翻轉卡片 */
-    .flip-card { perspective: 1000px; width: 100%; height: 45vh; }
-    .flip-card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; cursor: pointer; }
-    .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
-    .flip-card-front, .flip-card-back { position: absolute; width: 100%; height: 100%; border-radius: 32px; -webkit-backface-visibility: hidden; backface-visibility: hidden; overflow: hidden; }
-    .flip-card-back { transform: rotateY(180deg); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 30px; text-align: center; }
+    /* 隱藏原生捲軸 */
+    ::-webkit-scrollbar { display: none; }
 
-    /* 沈浸式地圖背景 */
-    #map-bg { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: -1; opacity: 0.15; filter: grayscale(100%) invert(100%); transition: 0.5s; }
-    
-    /* 圓形進度按鈕 (用於兌換) */
-    .progress-btn { position: relative; width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.05); display: flex; items-center; justify-center; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; }
-    .progress-btn:active { transform: scale(0.9); background: rgba(124, 58, 237, 0.2); border-color: var(--p); }
-    .progress-btn svg { position: absolute; inset: 0; transform: rotate(-90deg); }
-    .progress-btn circle { fill: none; stroke: var(--p); stroke-width: 3; stroke-dasharray: 157; stroke-dashoffset: 157; transition: stroke-dashoffset 0.1s linear; }
+    /* 頁面層級切換 */
+    .view { position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: 0.6s cubic-bezier(0.4, 0, 0.2, 1); overflow-y: auto; padding-bottom: 120px; }
+    .view.active { opacity: 1; pointer-events: auto; transform: scale(1); }
+    .view:not(.active) { transform: scale(0.95) translateY(20px); }
 
-    /* 隱藏入口提示 */
-    #secret-bar { position: fixed; top: 0; left: 0; width: 100%; height: 5px; background: rgba(255,255,255,0.01); z-index: 2000; cursor: pointer; }
+    /* 地圖客製化 */
+    #map { position: fixed; inset: 0; z-index: -1; filter: saturate(1.2) contrast(0.9); opacity: 0; transition: opacity 1s; }
+    #map.visible { opacity: 0.4; }
+
+    /* 磁性導航欄 */
+    .dock {
+      position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 8px; padding: 12px; border-radius: 32px;
+      z-index: 1000;
+    }
+    .dock-btn {
+      width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 20px; cursor: pointer; transition: all 0.3s;
+    }
+    .dock-btn.active { background: rgba(255,255,255,0.2); transform: scale(1.1); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
   </style>
 </head>
-<body class="overflow-hidden">
+<body>
 
-  <div class="bg-gradient-anim"></div>
-  <div id="map-bg"></div> <div id="splash" class="fixed inset-0 bg-slate-950 z-[9999] flex flex-col items-center justify-center p-10 text-center">
-    <div id="owl-logo" class="text-8xl mb-8 animate-pulse">🦉</div>
-    <div class="w-full max-w-sm h-1.5 bg-slate-800 rounded-full overflow-hidden">
-        <div id="load-bar" class="h-full bg-gradient-to-r from-violet-600 to-pink-500 w-0"></div>
+  <div class="aurora-bg"></div>
+  <div id="map"></div>
+
+  <div id="curtain" class="fixed inset-0 bg-black z-[9999] flex flex-col items-center justify-center text-center">
+    <div class="w-20 h-20 mb-8 rounded-full spatial-glass flex items-center justify-center text-4xl animate-bounce">🦉</div>
+    <div class="w-64 h-1 bg-white/10 rounded-full overflow-hidden">
+        <div id="loading-bar" class="h-full bg-white w-0"></div>
     </div>
-    <p class="mt-6 text-slate-500 text-sm font-bold tracking-[0.3em] uppercase animate__animated animate__fadeIn">Authenticating Mom OS...</p>
+    <p class="mt-6 text-white/50 text-[10px] tracking-[0.4em] uppercase font-light">Entering Spirited Journey...</p>
   </div>
 
-  <div id="secret-bar" onclick="unlock()"></div>
-
-  <main id="app-content" class="opacity-0 scale-95 transition-all duration-700 h-screen w-screen relative">
-    
-    <header class="fixed top-0 left-0 w-full px-8 pt-12 pb-6 flex justify-between items-end z-50">
-      <div>
-        <h1 class="text-2xl font-extrabold tracking-tighter text-white">Mom's Jubilee</h1>
-        <p class="text-[11px] text-pink-400 font-bold uppercase tracking-[0.2em] mt-1">2026.04.06 Special Edition</p>
-      </div>
-      <div class="w-10 h-10 glass rounded-xl flex items-center justify-center text-lg neon-border">🦉</div>
+  <main id="view-home" class="view active px-6 pt-16">
+    <header class="mb-10 animate__animated animate__fadeInDown">
+      <h2 class="text-white/60 text-sm font-semibold tracking-widest uppercase mb-1">MOM OS 2026</h2>
+      <h1 class="text-5xl font-bold tracking-tight" style="font-family: 'Noto Serif TC'">母后，生日快樂</h1>
     </header>
 
-    <div class="swiper mySwiper">
-      <div class="swiper-wrapper">
-        
-        <div class="swiper-slide">
-          <div class="w-full h-full flex flex-col p-4">
-            <h2 class="text-xl font-bold mb-6 text-indigo-300"># 時光航道</h2>
-            <div id="memory-cards" class="space-y-6">
-                <div class="flip-card glass rounded-3xl p-2 neon-border" onclick="this.classList.toggle('flipped')">
-                    <div class="flip-card-inner">
-                        <div class="flip-card-front">
-                            <img id="cur-img" src="" class="w-full h-full object-cover rounded-3xl">
-                            <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent p-6 flex flex-col justify-end">
-                                <h4 id="cur-title" class="font-bold text-xl text-white"></h4>
-                            </div>
-                        </div>
-                        <div class="flip-card-back glass">
-                            <p id="cur-desc" class="text-white text-sm leading-relaxed italic"></p>
-                        </div>
-                    </div>
-                </div>
-                <div class="text-center text-xs text-slate-500 mt-4 tracking-widest">點擊卡片翻轉 ・ 滑動切換模式</div>
-            </div>
-          </div>
+    <div class="spatial-glass rounded-[32px] p-8 mb-8 magnetic">
+      <div class="flex items-center gap-6">
+        <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-orange-400 to-rose-400 flex items-center justify-center text-3xl shadow-[0_0_30px_rgba(251,146,60,0.4)]">🎶</div>
+        <div>
+          <h3 class="text-xl font-bold mb-1">給媽媽的生日獨奏</h3>
+          <p class="text-[10px] text-white/50 tracking-widest uppercase">Willson 2900TA × Ultra SM4U</p>
+          <p class="text-[10px] text-white/40 mt-1 italic">Conducted & Performed by Your Son</p>
         </div>
-
-        <div class="swiper-slide">
-          <div class="w-full h-full flex flex-col p-4">
-            <h2 class="text-xl font-bold mb-6 text-pink-300"># 皇家指令端</h2>
-            <div id="service-list" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-                </div>
-          </div>
-        </div>
-
-        <div class="swiper-slide">
-          <div class="w-full h-full flex flex-col p-4">
-            <h2 class="text-xl font-bold mb-6 text-orange-300"># 音律核心</h2>
-            <div class="glass p-8 rounded-3xl neon-border flex flex-col items-center">
-                <div class="w-40 h-40 rounded-full border-4 border-dashed border-orange-500/50 flex items-center justify-center text-7xl animate__animated animate__pulse animate__infinite">🎷</div>
-                <h3 class="font-bold mt-8 text-white">Euphonium Solo</h3>
-                <p class="text-xs text-slate-400 mt-1 uppercase tracking-widest">Recorded by Your Son</p>
-                <button class="mt-8 px-6 py-2 rounded-full glass neon-border text-orange-400 text-xs font-bold active:scale-95 transition-all">播放祝福</button>
-            </div>
-          </div>
-        </div>
-
+      </div>
+      <div class="mt-8 flex items-center gap-4">
+        <button class="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center pl-1 transition-transform active:scale-90">▶</button>
+        <div class="flex-1 h-1 bg-white/20 rounded-full"></div>
       </div>
     </div>
 
+    <div class="spatial-glass rounded-[32px] p-6 flex gap-4 items-start magnetic">
+      <div class="text-3xl bg-white/10 p-3 rounded-2xl">🦉</div>
+      <p class="text-sm text-white/80 leading-relaxed font-light mt-2">
+        「系統已啟動。下方的導航列可以切換到『神隱時光隧道』回顧我們的日本之旅，或是開啟『勞務票券庫』召喚兒子服務。」
+      </p>
+    </div>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+  <main id="view-map" class="view px-6 pt-16">
+    <h2 class="text-3xl font-bold mb-8 text-white drop-shadow-lg" style="font-family: 'Noto Serif TC'">千與千尋的足跡</h2>
+    <div id="memory-scroll" class="flex flex-col gap-6">
+      </div>
+  </main>
+
+  <main id="view-wallet" class="view px-6 pt-16">
+    <h2 class="text-3xl font-bold mb-8" style="font-family: 'Noto Serif TC'">皇家兌換票夾</h2>
+    <div id="service-list" class="space-y-6">
+      </div>
+  </main>
+
+  <nav class="dock spatial-glass">
+    <div class="dock-btn active magnetic" onclick="switchView('home', this)">🏠</div>
+    <div class="dock-btn magnetic" onclick="switchView('map', this)">🗺️</div>
+    <div class="dock-btn magnetic" onclick="switchView('wallet', this)">🎫</div>
+  </nav>
+
   <script>
-    // 你指定的 GAS 連結
     const GAS = 'https://script.google.com/macros/s/AKfycbxxknkKwWS-Vtqo3pKovAMstLtQrXeyD7DhnILzeeisIBCGHmh03zFjFAdmF47ZXtv_/exec';
-    
-    let mapBg;
-    let swiper;
-    let memoriesData = [];
+    let map;
 
-    // 初始化地圖背景
-    function initMapBg() {
-      mapBg = L.map('map-bg', { zoomControl: false, attributionControl: false }).setView([23.8, 121], 7);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png').addTo(mapBg);
-    }
-
-    // 解鎖動畫
-    function unlock() {
-      gsap.to("#progress-unlock", { width: "100%", duration: 0.5 }); // 祕密滑塊功能省略
-      unlockAnim();
-    }
-    
-    function unlockAnim() {
-        gsap.to("#splash", { y: "-100%", duration: 1, ease: "expo.inOut" });
-        gsap.to("#app-content", { opacity: 1, scale: 1, duration: 1, delay: 0.3, ease: "power4.out" });
-    }
-
-    // 初始化 Swiper
-    function initSwiper() {
-      swiper = new Swiper(".mySwiper", {
-        effect: "coverflow", grabCursor: true, centeredSlides: true,
-        slidesPerView: "auto", loop: true,
-        coverflowEffect: { rotate: 10, stretch: 0, depth: 100, modifier: 2, slideShadows: true },
-        keyboard: true,
-      });
-      
-      // 滑動時切換地圖背景與顏色 (Immersive Experience)
-      swiper.on('slideChange', function () {
-        const colors = ['#7C3AED', '#F472B6', '#F97316']; // 紫, 粉, 橘
-        document.documentElement.style.setProperty('--p', colors[swiper.realIndex]);
-        if(swiper.realIndex === 0 && memoriesData.length > 0) {
-            updateMemoryCard(0); // 切換回回憶時重置卡片
-        }
+    // 1. 磁性按鈕物理特效 (Magnetic Interaction)
+    function initMagnetic() {
+      document.querySelectorAll('.magnetic').forEach(btn => {
+        btn.addEventListener('mousemove', (e) => {
+          const rect = btn.getBoundingClientRect();
+          const x = (e.clientX - rect.left - rect.width / 2) * 0.15;
+          const y = (e.clientY - rect.top - rect.height / 2) * 0.15;
+          gsap.to(btn, { x: x, y: y, duration: 0.4, ease: "power2.out" });
+        });
+        btn.addEventListener('mouseleave', () => {
+          gsap.to(btn, { x: 0, y: 0, duration: 0.7, ease: "elastic.out(1, 0.3)" });
+        });
       });
     }
 
-    // 更新回憶卡片內容
-    function updateMemoryCard(idx) {
-        const m = memoriesData[idx];
-        document.getElementById('cur-img').src = m[4];
-        document.getElementById('cur-title').innerText = m[0];
-        document.getElementById('cur-desc').innerText = m[3];
-        // 平滑移動地圖背景
-        mapBg.panTo([m[1], m[2]], { animate: true, duration: 1 });
+    // 2. 視圖平滑切換
+    function switchView(id, el) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.dock-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('view-' + id).classList.add('active');
+      el.classList.add('active');
+
+      const mapEl = document.getElementById('map');
+      if(id === 'map') {
+        mapEl.classList.add('visible');
+        setTimeout(() => map.invalidateSize(), 300);
+      } else {
+        mapEl.classList.remove('visible');
+      }
     }
 
-    // 資料處理
+    // 3. 地圖初始化 (使用 Stamen 質感水彩底圖)
+    function initMap() {
+      map = L.map('map', { zoomControl: false, dragging: false }).setView([35.0, 135.7], 6); // 預設日本
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png').addTo(map);
+    }
+
+    // 4. 資料抓取與渲染
     window.onload = async () => {
-      initMapBg();
-      initSwiper();
-
-      // 模擬加載進度
-      gsap.to("#load-bar", { width: "90%", duration: 2, ease: "power2.inOut" });
+      initMap();
+      gsap.to("#loading-bar", { width: "70%", duration: 1.5, ease: "power2.inOut" });
 
       try {
         const res = await fetch(`${GAS}?action=getData`);
         const data = await res.json();
-        memoriesData = data.memories;
 
-        // 初始化第一張回憶卡片
-        if(memoriesData.length > 0) updateMemoryCard(0);
+        // 渲染空間玻璃回憶卡
+        const memScroll = document.getElementById('memory-scroll');
+        memScroll.innerHTML = data.memories.map((m, i) => `
+          <div class="spatial-glass rounded-[32px] p-4 magnetic transition-all duration-500" onclick="panMap(${m[1]}, ${m[2]}, this)">
+            <img src="${m[4]}" class="w-full h-48 object-cover rounded-2xl mb-4 opacity-90">
+            <h4 class="font-bold text-xl px-2">${m[0]}</h4>
+            <p class="text-sm text-white/70 px-2 pb-2 mt-1 font-light">${m[3]}</p>
+          </div>
+        `).join('');
 
-        // 渲染服務清單
-        const list = document.getElementById('service-list');
-        list.innerHTML = data.services.map(s => `
-          <div class="glass p-5 rounded-3xl flex justify-between items-center neon-border transition-transform active:scale-95">
-            <div>
-              <h4 class="font-bold text-white text-base">${s[1]}</h4>
-              <p class="text-[10px] text-pink-400 font-bold tracking-widest mt-1 uppercase">${s[2]}</p>
-              <div class="mt-2 text-xs text-slate-500 font-mono">STOCK: ${s[4]}/${s[3]}</div>
+        // 渲染 Apple Wallet 票券
+        const sList = document.getElementById('service-list');
+        sList.innerHTML = data.services.map(s => `
+          <div class="wallet-pass" id="pass-${s[0]}">
+            <div class="flex justify-between items-start mb-8">
+              <div>
+                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Official Voucher</p>
+                <h4 class="font-black text-2xl">${s[1]}</h4>
+              </div>
+              <div class="w-12 h-12 bg-black rounded-xl flex items-center justify-center text-white text-xl">🦉</div>
             </div>
-            <div class="progress-btn group" onclick="redeem('${s[0]}', this)">
-              <svg width="56" height="56"><circle cx="28" cy="28" r="25" id="circ-${s[0]}" /></svg>
-              <span class="text-xl group-active:scale-125 transition-transform">${s[4] > 0 ? '🎫' : '🚫'}</span>
+            <div class="flex justify-between items-end mt-12">
+              <div>
+                <p class="text-[10px] text-gray-400 uppercase tracking-widest">Detail</p>
+                <p class="text-sm font-bold text-gray-800">${s[2]}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-[10px] text-gray-400 uppercase tracking-widest">Valid</p>
+                <p class="text-xl font-black text-indigo-600">${s[4]} <span class="text-sm text-gray-400 font-normal">left</span></p>
+              </div>
+            </div>
+            <div class="absolute inset-0 bg-white/0 flex items-center justify-center opacity-0 hover:bg-white/90 hover:opacity-100 transition-all rounded-20px cursor-pointer backdrop-blur-sm" onclick="redeem('${s[0]}')">
+                <span class="bg-black text-white px-8 py-3 rounded-full font-bold shadow-2xl tracking-widest uppercase">Tap to Excute</span>
             </div>
           </div>
         `).join('');
 
-        // 資料抓取成功後，自動解鎖 (或者保留祕密滑塊)
-        gsap.to("#load-bar", { width: "100%", duration: 0.5, onComplete: unlockAnim });
+        initMagnetic();
+
+        // 完成載入動畫
+        gsap.to("#loading-bar", { width: "100%", duration: 0.5, onComplete: () => {
+          gsap.to("#curtain", { opacity: 0, duration: 1, onComplete: () => document.getElementById('curtain').remove() });
+        }});
 
       } catch (e) {
-        console.error(e);
-        alert("資料庫連線超時，但我對妳的愛不超時。請檢查 GAS 部署權限。");
-        unlockAnim(); // 壞掉也要讓媽媽進去
+        document.getElementById('curtain').remove();
+        alert("資料庫連線失敗，請確認 GAS 權限為「任何人」。");
       }
     };
 
-    // 兌換指令 (加上按鈕 Loading 動畫)
-    async function redeem(id, el) {
-      if(el.classList.contains('loading')) return;
-      if (!confirm('確認執行皇家指令？兒子會收到 Line 通知。')) return;
-      
-      el.classList.add('loading');
-      const circle = document.getElementById('circ-'+id);
-      
-      // 進度條動畫
-      gsap.to(circle, { strokeDashoffset: 0, duration: 1.5, ease: "linear" });
+    function panMap(lat, lng, el) {
+      map.flyTo([lat, lng], 14, { duration: 2, easeLinearity: 0.25 });
+      document.querySelectorAll('#memory-scroll .spatial-glass').forEach(c => c.style.borderColor = 'rgba(255,255,255,0.2)');
+      el.style.borderColor = '#4f46e5';
+    }
 
-      const resp = await fetch(`${GAS}?action=redeem&id=${id}`);
-      const result = await resp.text();
+    async function redeem(id) {
+      if (!confirm('指紋驗證 (模擬)：確認使用這張票券？')) return;
+      const pass = document.getElementById('pass-'+id);
       
-      if (result === 'SUCCESS') {
-        el.innerHTML = '<span class="text-2xl animate__animated animate__zoomIn">✨</span>';
-        setTimeout(() => location.reload(), 2000);
+      gsap.to(pass, { scale: 0.9, opacity: 0.5, duration: 0.3 }); // 按壓特效
+      
+      const res = await fetch(`${GAS}?action=redeem&id=${id}`);
+      if(await res.text() === 'SUCCESS') {
+        gsap.to(pass, { y: -500, opacity: 0, duration: 0.8, ease: "power3.in", onComplete: () => location.reload() }); // 飛出特效
       } else {
-        alert('執行失敗，請重試。');
-        gsap.set(circle, { strokeDashoffset: 157 }); // 重置
-        el.classList.remove('loading');
+        alert("票券失效或次數不足");
+        gsap.to(pass, { scale: 1, opacity: 1, duration: 0.3 });
       }
     }
   </script>
