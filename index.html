@@ -3,151 +3,178 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>MOM'S PANEL v2026</title>
+  <title>MOM'S PANEL v2.0</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
   <style>
-    :root { --main-bg: #F8F9FD; --primary: #7C83FD; --accent: #FFAB76; }
-    body { font-family: 'Noto Sans TC', sans-serif; background: var(--main-bg); color: #2D3142; -webkit-tap-highlight-color: transparent; }
+    :root { --primary: #6366F1; --bg: #F9FAFB; }
+    body { font-family: 'Inter', 'Noto Sans TC', sans-serif; background: var(--bg); color: #1F2937; overflow: hidden; }
     
-    /* 模仿 Flutter 的 AppBar 陰影 */
-    .app-bar { background: white; box-shadow: 0 2px 15px rgba(0,0,0,0.03); }
+    /* 分頁容器 */
+    .view-content { height: calc(100vh - 80px); overflow-y: auto; display: none; padding-bottom: 40px; }
+    .view-content.active { display: block; animation: slideUp 0.3s ease-out; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* 地圖客製化 */
+    #map { height: 100%; width: 100%; z-index: 10; }
+    .leaflet-popup-content-wrapper { border-radius: 16px; padding: 4px; }
+
+    /* 底部導航欄 */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; width: 100%; height: 80px;
+      background: white; border-top: 1px solid #E5E7EB;
+      display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom);
+      z-index: 1000;
+    }
+    .nav-item { display: flex; flex-direction: column; align-items: center; color: #9CA3AF; cursor: pointer; }
+    .nav-item.active { color: var(--primary); }
+
+    /* 卡片設計 */
+    .card-ios { background: white; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #F3F4F6; }
     
-    /* 水平滾動隱藏捲軸 */
+    /* 隱藏捲軸 */
     .no-scrollbar::-webkit-scrollbar { display: none; }
-    
-    /* 卡片設計：像你開發過的系統組件 */
-    .system-card {
-      background: white; border-radius: 24px;
-      box-shadow: 0 10px 25px rgba(124, 131, 253, 0.08);
-      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    .system-card:active { transform: scale(0.96); }
-
-    /* 門票缺口效果 */
-    .ticket { position: relative; overflow: hidden; }
-    .ticket::before, .ticket::after {
-      content: ''; position: absolute; left: -10px; top: 50%; transform: translateY(-50%);
-      width: 20px; height: 20px; background: var(--main-bg); border-radius: 50%;
-    }
-    .ticket::after { left: auto; right: -10px; }
-
-    /* Loading 動畫 */
-    #loading-overlay {
-      position: fixed; inset: 0; background: white; z-index: 9999;
-      display: flex; flex-direction: column; items-center; justify-content: center;
-    }
   </style>
 </head>
-<body class="pb-24">
+<body>
 
-  <div id="loading-overlay">
-    <div class="w-16 h-16 border-4 border-indigo-100 border-t-indigo-500 rounded-full animate-spin mb-4"></div>
-    <p class="text-indigo-500 font-medium tracking-widest animate-pulse">SYSTEM INITIALIZING...</p>
-  </div>
+  <main>
+    <div id="view-home" class="view-content active p-6">
+      <div class="flex justify-between items-center mb-8 pt-4">
+        <div>
+          <p class="text-xs font-bold text-indigo-500 tracking-widest uppercase">System Status</p>
+          <h1 class="text-3xl font-extrabold tracking-tight">你好, 媽媽</h1>
+        </div>
+        <div class="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-2xl">🦉</div>
+      </div>
 
-  <nav class="app-bar sticky top-0 px-6 py-4 z-50 flex justify-between items-center">
-    <div>
-      <p class="text-[10px] text-indigo-400 font-bold tracking-widest leading-none mb-1">MOM'S EXCLUSIVE</p>
-      <h1 class="text-xl font-bold">2026 生日控制台</h1>
+      <div class="card-ios p-6 mb-6 bg-indigo-600 text-white border-none shadow-indigo-200 shadow-xl">
+        <p class="text-xs opacity-70 mb-1 uppercase tracking-widest">Upcoming Event</p>
+        <h2 class="text-xl font-bold">2026.04.06 生日快樂</h2>
+        <div class="mt-4 h-1 w-full bg-white/20 rounded-full overflow-hidden">
+          <div class="h-full bg-white w-3/4"></div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="card-ios p-5">
+          <p class="text-xs text-gray-400 mb-1">回憶足跡</p>
+          <p class="text-2xl font-bold" id="count-memories">0</p>
+        </div>
+        <div class="card-ios p-5">
+          <p class="text-xs text-gray-400 mb-1">可用服務</p>
+          <p class="text-2xl font-bold" id="count-services">0</p>
+        </div>
+      </div>
+
+      <div class="card-ios p-6 italic text-gray-600 leading-relaxed">
+        「這是我親手寫的系統，裡面有我們的旅行紀錄，還有給妳的無限兌換券。生日快樂！」
+      </div>
     </div>
-    <div class="w-10 h-10 bg-indigo-50 rounded-2xl flex items-center justify-center text-xl shadow-sm">
-      🦉 </div>
-  </nav>
 
-  <main class="p-6">
-    <section class="mb-10">
-      <div class="flex justify-between items-end mb-4">
-        <h2 class="text-lg font-bold">時光紀錄 <span class="text-xs text-gray-300 font-normal ml-2">Moments</span></h2>
-        <span class="text-xs text-indigo-500 font-medium">滑動查看更多 →</span>
-      </div>
-      <div id="memory-scroll" class="flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-2 px-2">
-        </div>
-    </section>
+    <div id="view-map" class="view-content h-screen p-0">
+      <div id="map"></div>
+    </div>
 
-    <section class="mb-8">
-      <h2 class="text-lg font-bold mb-4">皇家服務券 <span class="text-xs text-gray-300 font-normal ml-2">Vouchers</span></h2>
-      <div id="service-list" class="grid gap-4">
+    <div id="view-service" class="view-content p-6">
+      <h2 class="text-2xl font-bold mb-6 pt-4">皇家服務中心</h2>
+      <div id="service-list" class="space-y-4">
         </div>
-    </section>
-
-    <section>
-      <div class="system-card p-6 bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
-        <h3 class="text-sm opacity-80 mb-2">來自兒子的心聲</h3>
-        <p class="leading-relaxed font-medium">
-          這是我用這幾年學到的技術親手寫的系統。<br>
-          祝全世界最支持我的媽媽，生日快樂！
-        </p>
-        <div class="mt-6 flex items-center gap-3">
-          <div class="w-8 h-px bg-white/30"></div>
-          <span class="text-xs font-bold tracking-widest">OWNER: YOUR SON</span>
-        </div>
-      </div>
-    </section>
+    </div>
   </main>
 
+  <nav class="bottom-nav">
+    <div class="nav-item active" onclick="switchTab('home', this)">
+      <span class="text-2xl">🏠</span><span class="text-[10px] font-bold mt-1 uppercase">Home</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('map', this)">
+      <span class="text-2xl">📍</span><span class="text-[10px] font-bold mt-1 uppercase">Travel</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('service', this)">
+      <span class="text-2xl">🛎️</span><span class="text-[10px] font-bold mt-1 uppercase">Service</span>
+    </div>
+  </nav>
+
   <script>
-    // 你指定的 GAS 連結
+    // 你的 GAS 連結
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbxxknkKwWS-Vtqo3pKovAMstLtQrXeyD7DhnILzeeisIBCGHmh03zFjFAdmF47ZXtv_/exec';
+    
+    let map;
+    let markers = [];
 
-    window.onload = async () => {
-      try {
-        const resp = await fetch(`${GAS_URL}?action=getData`);
-        const data = await resp.json();
-        
-        renderMemories(data.memories);
-        renderServices(data.services);
-        
-        // 隱藏 Loading
-        gsap.to("#loading-overlay", { opacity: 0, pointerEvents: 'none', duration: 0.5 });
-      } catch (err) {
-        alert("數據載入失敗，請確認 GAS 連結是否正確或已開啟所有人存取。");
-      }
-    };
-
-    function renderMemories(memories) {
-      const container = document.getElementById('memory-scroll');
-      container.innerHTML = memories.map(m => `
-        <div class="system-card flex-shrink-0 w-64 h-80 overflow-hidden relative">
-          <img src="${m[4]}" class="w-full h-full object-cover">
-          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent p-5 flex flex-col justify-end text-white">
-            <h4 class="font-bold text-lg mb-1">${m[0]}</h4>
-            <p class="text-xs opacity-80 leading-snug">${m[3]}</p>
-          </div>
-        </div>
-      `).join('');
+    // 初始化地圖
+    function initMap() {
+      map = L.map('map', { zoomControl: false }).setView([23.8, 121], 7);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
     }
 
-    function renderServices(services) {
+    // 切換分頁
+    function switchTab(tabId, el) {
+      document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById('view-' + tabId).classList.add('active');
+      el.classList.add('active');
+      
+      // 如果切換到地圖，需要重新計算尺寸
+      if(tabId === 'map') {
+        setTimeout(() => map.invalidateSize(), 300);
+      }
+    }
+
+    // 抓取資料
+    window.onload = async () => {
+      initMap();
+      const resp = await fetch(`${GAS_URL}?action=getData`);
+      const data = await resp.json();
+      
+      // 更新統計數據
+      document.getElementById('count-memories').innerText = data.memories.length;
+      document.getElementById('count-services').innerText = data.services.length;
+
+      // 渲染地圖標記
+      data.memories.forEach(m => {
+        const marker = L.marker([m[1], m[2]]).addTo(map);
+        marker.bindPopup(`
+          <div class="p-2">
+            <img src="${m[4]}" class="rounded-lg mb-2 w-full h-32 object-cover">
+            <h4 class="font-bold text-gray-800">${m[0]}</h4>
+            <p class="text-xs text-gray-500 mt-1">${m[3]}</p>
+          </div>
+        `);
+      });
+
+      // 渲染服務列表
       const list = document.getElementById('service-list');
-      list.innerHTML = services.map(s => `
-        <div class="system-card ticket p-5 flex justify-between items-center bg-white border border-indigo-50/50">
-          <div class="pl-2">
-            <h4 class="font-bold text-indigo-900">${s[1]}</h4>
-            <p class="text-[10px] text-gray-400 mt-1 uppercase tracking-widest">${s[2]}</p>
+      list.innerHTML = data.services.map(s => `
+        <div class="card-ios p-5 flex justify-between items-center transition-all active:scale-95">
+          <div>
+            <h4 class="font-bold text-gray-800">${s[1]}</h4>
+            <p class="text-xs text-gray-400 mt-1">${s[2]}</p>
             <div class="mt-2 flex items-center gap-2">
-              <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span>
-              <span class="text-[10px] font-bold text-gray-400">REMAINING: ${s[4]}</span>
+              <div class="w-2 h-2 rounded-full bg-indigo-400"></div>
+              <span class="text-[10px] font-bold text-gray-400 tracking-widest uppercase">Stock: ${s[4]}</span>
             </div>
           </div>
           <button onclick="redeem('${s[0]}')" 
-            class="${s[4] > 0 ? 'bg-indigo-500' : 'bg-gray-200'} text-white text-[10px] font-bold px-5 py-2 rounded-xl shadow-lg shadow-indigo-200 uppercase tracking-widest active:scale-90 transition-all">
-            ${s[4] > 0 ? 'USE NOW' : 'USED'}
+            class="${s[4] > 0 ? 'bg-indigo-600 shadow-indigo-100' : 'bg-gray-200'} text-white px-5 py-2 rounded-xl text-xs font-bold shadow-lg active:bg-indigo-700 transition-colors uppercase tracking-widest">
+            ${s[4] > 0 ? 'Excute' : 'Used'}
           </button>
         </div>
       `).join('');
-    }
+    };
 
     async function redeem(id) {
-      if (!confirm('確認向兒子發送兌換指令？')) return;
+      if (!confirm('確認發送遠端服務指令？')) return;
       const resp = await fetch(`${GAS_URL}?action=redeem&id=${id}`);
       const result = await resp.text();
       if (result === 'SUCCESS') {
-        alert('指令已送達！Line 通知已發送。');
+        alert('指令已確認！兒子手機已收到 Line 通知。');
         location.reload();
       } else {
-        alert('兌換失敗或次數不足。');
+        alert('兌換失敗。');
       }
     }
   </script>
