@@ -1,167 +1,283 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MOM OS | Ultimate Edition</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;800&family=Noto+Sans+TC:wght@500;700&display=swap" rel="stylesheet">
-    <style>
-        :root { --primary: #6366F1; --accent: #F43F5E; }
-        body { font-family: 'Plus Jakarta Sans', 'Noto Sans TC', sans-serif; background: #0F172A; color: white; overflow: hidden; }
-        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        
-        /* 1. 貓頭鷹管家懸浮窗 */
-        #butler-menu { position: fixed; bottom: 100px; right: 24px; width: 200px; transform: scale(0); transform-origin: bottom right; z-index: 2000; }
-        
-        /* 2. 體感音樂視覺波形 */
-        .music-bar { width: 4px; background: var(--primary); border-radius: 2px; transition: height 0.1s; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>MOM'S JUBILEE | Spatial OS</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;600;800&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
-        /* 3. 抽卡特效 */
-        #gacha-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; display: none; }
-        .gacha-box { width: 200px; height: 200px; background: linear-gradient(45deg, #FFD700, #FFA500); border-radius: 40px; box-shadow: 0 0 50px rgba(255, 215, 0, 0.5); }
-        
-        /* 切換視圖 */
-        .view { height: 100vh; width: 100vw; display: none; padding: 24px; padding-bottom: 120px; overflow-y: auto; }
-        .view.active { display: block; animation: fadeIn 0.5s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  <style>
+    :root { --glass-bg: rgba(255, 255, 255, 0.15); --glass-border: rgba(255, 255, 255, 0.2); }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Noto Serif TC', sans-serif; background: #000; color: #fff; overflow: hidden; margin: 0; }
+    
+    /* 極光與地圖背景保留 */
+    .aurora-bg {
+      position: fixed; top: -50%; left: -50%; width: 200%; height: 200%;
+      background: radial-gradient(circle at 50% 50%, #4f46e5 0%, transparent 40%), radial-gradient(circle at 80% 20%, #f43f5e 0%, transparent 40%), radial-gradient(circle at 20% 80%, #0ea5e9 0%, transparent 40%);
+      filter: blur(80px) saturate(150%); animation: aurora 20s linear infinite alternate; z-index: -2; opacity: 0.6;
+    }
+    @keyframes aurora { 0% { transform: rotate(0deg) scale(1); } 100% { transform: rotate(360deg) scale(1.2); } }
+    #map { position: fixed; inset: 0; z-index: -1; filter: saturate(1.2) contrast(0.9); opacity: 0; transition: opacity 1s; }
+    #map.visible { opacity: 0.4; }
 
-        .dock { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); height: 64px; background: rgba(255,255,255,0.1); backdrop-filter: blur(15px); border-radius: 32px; display: flex; gap: 20px; padding: 0 24px; align-items: center; z-index: 1000; border: 1px solid rgba(255,255,255,0.2); }
-    </style>
+    /* 空間玻璃與票券保留 */
+    .spatial-glass { background: var(--glass-bg); backdrop-filter: blur(40px) saturate(200%); border: 1px solid var(--glass-border); box-shadow: 0 30px 60px rgba(0,0,0,0.12); }
+    .wallet-pass {
+      position: relative; background: #fff; color: #000; border-radius: 20px; padding: 24px;
+      mask-image: radial-gradient(circle at 0px 50%, transparent 12px, black 13px), radial-gradient(circle at 100% 50%, transparent 12px, black 13px);
+      mask-size: 51% 100%, 51% 100%; mask-position: left, right; mask-repeat: no-repeat;
+      transition: transform 0.4s;
+    }
+    .wallet-pass::after { content: ''; position: absolute; left: 24px; right: 24px; top: 50%; border-top: 2px dashed rgba(0,0,0,0.1); }
+    
+    ::-webkit-scrollbar { display: none; }
+    .view { position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: 0.6s cubic-bezier(0.4, 0, 0.2, 1); overflow-y: auto; padding-bottom: 120px; }
+    .view.active { opacity: 1; pointer-events: auto; transform: scale(1); }
+    .view:not(.active) { transform: scale(0.95) translateY(20px); }
+
+    /* 磁性導航保留 */
+    .dock { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; padding: 12px; border-radius: 32px; z-index: 1000; }
+    .dock-btn { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; transition: all 0.3s; }
+    .dock-btn.active { background: rgba(255,255,255,0.2); transform: scale(1.1); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+
+    /* 功能 1：體感波形 */
+    .music-bar { width: 4px; background: white; border-radius: 2px; transition: height 0.1s; display: inline-block; margin: 0 2px; }
+    
+    /* 功能 2：金猴盲盒特效 */
+    #gacha-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(20px); z-index: 3000; display: none; flex-direction: column; items-center; justify-content: center; }
+  </style>
 </head>
 <body>
 
-    <div id="gacha-overlay" class="flex flex-col items-center justify-center">
-        <div id="gacha-cube" class="gacha-box flex items-center justify-center text-6xl">🎁</div>
-        <h2 id="gacha-result" class="text-2xl font-bold mt-10 text-white opacity-0"></h2>
-        <button id="close-gacha" class="mt-8 px-8 py-3 glass rounded-full opacity-0">收下禮物</button>
+  <div class="aurora-bg"></div>
+  <div id="map"></div>
+
+  <div id="gacha-overlay" class="flex flex-col items-center justify-center text-center">
+    <div id="gacha-cube" class="w-32 h-32 rounded-3xl spatial-glass flex items-center justify-center text-6xl shadow-[0_0_50px_rgba(251,191,36,0.5)] border border-yellow-400/50">🐒</div>
+    <h2 id="gacha-result" class="text-3xl font-bold mt-10 text-white opacity-0" style="font-family: 'Noto Serif TC'"></h2>
+    <p id="gacha-sub" class="text-sm text-white/60 mt-2 opacity-0">已發送通知，兒子即刻為您服務</p>
+    <button id="close-gacha" class="mt-10 px-8 py-3 spatial-glass rounded-full opacity-0 text-sm tracking-widest uppercase active:scale-95 transition-transform" onclick="location.reload()">收下禮物</button>
+  </div>
+
+  <main id="view-home" class="view active px-6 pt-16">
+    <header class="mb-10 animate__animated animate__fadeInDown">
+      <h2 class="text-white/60 text-sm font-semibold tracking-widest uppercase mb-1">MOM OS 2026</h2>
+      <h1 class="text-5xl font-bold tracking-tight" style="font-family: 'Noto Serif TC'">母后，生日快樂</h1>
+    </header>
+
+    <div class="spatial-glass rounded-[32px] p-8 mb-6 magnetic cursor-pointer active:scale-95 transition-transform" onclick="requestMotionPermission()">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-orange-400 to-rose-400 flex items-center justify-center text-2xl shadow-[0_0_30px_rgba(251,146,60,0.4)]">🎶</div>
+            <div>
+                <h3 class="font-bold text-lg">給媽媽的生日獨奏</h3>
+                <p class="text-[9px] text-white/50 tracking-widest uppercase">Willson 2900TA × Ultra SM4U</p>
+            </div>
+        </div>
+        <div id="waveform" class="flex items-end h-8 opacity-50">
+            <div class="music-bar h-2"></div><div class="music-bar h-4"></div><div class="music-bar h-6"></div><div class="music-bar h-3"></div><div class="music-bar h-2"></div>
+        </div>
+      </div>
+      <div class="h-px w-full bg-white/10 my-4"></div>
+      <div class="flex justify-between items-center">
+          <p id="motion-status" class="text-xs font-bold tracking-widest text-orange-300 uppercase">點擊啟動體感指揮</p>
+          <p class="text-[10px] text-white/40 italic">Conducted by Your Son</p>
+      </div>
     </div>
 
-    <main id="view-home" class="view active">
-        <header class="pt-10 mb-8">
-            <h1 class="text-4xl font-extrabold tracking-tighter">MOM OS <span class="text-indigo-400">v3.0</span></h1>
-            <p class="text-xs text-slate-500 font-bold tracking-[0.3em] uppercase mt-2">Personal Service Terminal</p>
-        </header>
-
-        <div class="glass rounded-[32px] p-6 mb-6 overflow-hidden relative" onclick="requestMotionPermission()">
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <h3 class="font-bold text-lg">體感指揮模式</h3>
-                    <p class="text-xs text-slate-400">揮動手機播放 Euphonium 獨奏</p>
-                </div>
-                <div class="text-2xl">🎷</div>
-            </div>
-            <div class="flex items-end justify-center gap-1 h-12" id="waveform">
-                <div class="music-bar h-2"></div><div class="music-bar h-4"></div><div class="music-bar h-8"></div><div class="music-bar h-5"></div><div class="music-bar h-2"></div>
-            </div>
-            <p id="motion-status" class="text-[10px] text-center mt-4 text-indigo-400 font-bold uppercase tracking-widest">點擊開啟體感控制</p>
+    <div class="spatial-glass rounded-[32px] p-6 mb-6 magnetic flex items-center justify-between cursor-pointer active:scale-95 transition-transform" onclick="startGacha()">
+        <div>
+            <h3 class="font-bold text-lg text-yellow-300">靈猴驚喜盲盒</h3>
+            <p class="text-[10px] text-white/60 tracking-widest uppercase mt-1">抽取未知專屬服務</p>
         </div>
+        <div class="text-3xl bg-white/10 w-12 h-12 rounded-full flex items-center justify-center">🎁</div>
+    </div>
 
-        <div class="grid grid-cols-2 gap-4">
-            <div class="glass rounded-[32px] p-6 flex flex-col items-center justify-center text-center border-2 border-indigo-500/30" onclick="startGacha()">
-                <div class="text-4xl mb-2">🎰</div>
-                <span class="text-xs font-bold uppercase tracking-widest">驚喜盲盒</span>
-            </div>
-            <div class="glass rounded-[32px] p-6 flex flex-col items-center justify-center text-center">
-                <div class="text-4xl mb-2">📊</div>
-                <span class="text-xs font-bold uppercase tracking-widest">系統狀態</span>
-            </div>
+    <div class="spatial-glass rounded-[32px] p-6 magnetic relative overflow-hidden">
+      <div class="flex gap-4 items-center mb-6 relative z-10">
+        <div class="text-3xl bg-white/10 w-14 h-14 flex items-center justify-center rounded-2xl shadow-inner">🦉</div>
+        <div>
+            <h3 class="font-bold">管家快速指令</h3>
+            <p class="text-xs text-white/60">一鍵發送 Line 通知給兒子</p>
         </div>
-    </main>
+      </div>
+      <div class="grid grid-cols-2 gap-3 relative z-10">
+          <button onclick="sos('肚子餓了，求餵食')" class="bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-colors">🍱 我肚子餓了</button>
+          <button onclick="sos('需要按摩支援')" class="bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-colors">💆‍♀️ 召喚按摩師</button>
+          <button onclick="sos('想喝飲料，快去買')" class="bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-colors">🥤 想喝點飲料</button>
+          <button onclick="sos('趕快出現在我面前')" class="bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-colors">👦 兒子來見我</button>
+      </div>
+    </div>
+  </main>
 
-    <div id="butler-fab" class="fixed bottom-[110px] right-6 w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center text-2xl shadow-xl shadow-indigo-500/40 z-[1999]" onclick="toggleButler()">🦉</div>
+  <main id="view-map" class="view px-6 pt-16">
+    <h2 class="text-3xl font-bold mb-8 text-white drop-shadow-lg" style="font-family: 'Noto Serif TC'">千與千尋的足跡</h2>
+    <div id="memory-scroll" class="flex flex-col gap-6"></div>
+  </main>
+
+  <main id="view-wallet" class="view px-6 pt-16">
+    <h2 class="text-3xl font-bold mb-8" style="font-family: 'Noto Serif TC'">皇家兌換票夾</h2>
+    <div id="service-list" class="space-y-6"></div>
+  </main>
+
+  <nav class="dock spatial-glass">
+    <div class="dock-btn active magnetic" onclick="switchView('home', this)">🏠</div>
+    <div class="dock-btn magnetic" onclick="switchView('map', this)">🗺️</div>
+    <div class="dock-btn magnetic" onclick="switchView('wallet', this)">🎫</div>
+  </nav>
+
+  <audio id="bgm" src="你的音樂網址" loop preload="auto"></audio>
+
+  <script>
+    const GAS = 'https://script.google.com/macros/s/AKfycbxxknkKwWS-Vtqo3pKovAMstLtQrXeyD7DhnILzeeisIBCGHmh03zFjFAdmF47ZXtv_/exec';
+    let map;
+
+    // --- 初始化 UI 邏輯 ---
+    function initMagnetic() {
+      document.querySelectorAll('.magnetic').forEach(btn => {
+        btn.addEventListener('mousemove', (e) => {
+          const rect = btn.getBoundingClientRect();
+          gsap.to(btn, { x: (e.clientX - rect.left - rect.width/2)*0.1, y: (e.clientY - rect.top - rect.height/2)*0.1, duration: 0.4 });
+        });
+        btn.addEventListener('mouseleave', () => gsap.to(btn, { x: 0, y: 0, duration: 0.7, ease: "elastic.out(1, 0.3)" }));
+      });
+    }
+
+    function switchView(id, el) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.dock-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('view-' + id).classList.add('active');
+      el.classList.add('active');
+      
+      const mapEl = document.getElementById('map');
+      if(id === 'map') { mapEl.classList.add('visible'); setTimeout(() => map.invalidateSize(), 300); } 
+      else { mapEl.classList.remove('visible'); }
+    }
+
+    function initMap() {
+      map = L.map('map', { zoomControl: false, dragging: false }).setView([35.0, 135.7], 6);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png').addTo(map);
+    }
+
+    // --- 資料載入 ---
+    window.onload = async () => {
+      initMap();
+      try {
+        const res = await fetch(`${GAS}?action=getData`);
+        const data = await res.json();
+
+        document.getElementById('memory-scroll').innerHTML = data.memories.map(m => `
+          <div class="spatial-glass rounded-[32px] p-4 magnetic" onclick="map.flyTo([${m[1]}, ${m[2]}], 14, {duration:2})">
+            <img src="${m[4]}" class="w-full h-48 object-cover rounded-2xl mb-4 opacity-90">
+            <h4 class="font-bold text-xl px-2">${m[0]}</h4>
+            <p class="text-sm text-white/70 px-2 pb-2 mt-1 font-light">${m[3]}</p>
+          </div>`).join('');
+
+        document.getElementById('service-list').innerHTML = data.services.map(s => `
+          <div class="wallet-pass" id="pass-${s[0]}">
+            <div class="flex justify-between items-start mb-8">
+              <div><p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Official Voucher</p><h4 class="font-black text-2xl">${s[1]}</h4></div>
+              <div class="w-12 h-12 bg-black rounded-xl flex items-center justify-center text-white text-xl">🦉</div>
+            </div>
+            <div class="flex justify-between items-end mt-12">
+              <div><p class="text-[10px] text-gray-400 uppercase tracking-widest">Detail</p><p class="text-sm font-bold text-gray-800">${s[2]}</p></div>
+              <div class="text-right"><p class="text-[10px] text-gray-400 uppercase tracking-widest">Valid</p><p class="text-xl font-black text-indigo-600">${s[4]} <span class="text-sm text-gray-400 font-normal">left</span></p></div>
+            </div>
+            <div class="absolute inset-0 bg-white/0 flex items-center justify-center opacity-0 hover:bg-white/90 hover:opacity-100 transition-all rounded-20px cursor-pointer" onclick="redeem('${s[0]}')">
+                <span class="bg-black text-white px-8 py-3 rounded-full font-bold shadow-2xl tracking-widest uppercase">Tap to Excute</span>
+            </div>
+          </div>`).join('');
+
+        initMagnetic();
+      } catch (e) { console.error(e); }
+    };
+
+    // --- 功能 1：貓頭鷹 SOS ---
+    async function sos(msg) {
+        if(!confirm(`發送指令：「${msg}」？`)) return;
+        await fetch(`${GAS}?action=redeem&id=SOS&msg=${encodeURIComponent(msg)}`);
+        alert('指令已傳達至兒子的手環！');
+    }
+
+    // --- 功能 2：體感音樂 (陀螺儀) ---
+    let audio = document.getElementById('bgm');
+    let lastX = 0, lastY = 0;
     
-    <div id="butler-menu" class="glass rounded-3xl p-4 shadow-2xl">
-        <h4 class="text-xs font-bold text-slate-400 mb-4 px-2 uppercase tracking-widest">快速指令</h4>
-        <div class="space-y-2">
-            <button onclick="sos('我餓了')" class="w-full py-3 text-left px-4 rounded-xl hover:bg-white/10 transition-all text-sm font-bold flex items-center gap-3">🍱 <span>我肚子餓了</span></button>
-            <button onclick="sos('想喝飲料')" class="w-full py-3 text-left px-4 rounded-xl hover:bg-white/10 transition-all text-sm font-bold flex items-center gap-3">🥤 <span>想喝點東西</span></button>
-            <button onclick="sos('召喚兒子')" class="w-full py-3 text-left px-4 rounded-xl hover:bg-white/10 transition-all text-sm font-bold flex items-center gap-3">👦 <span>召喚兒子</span></button>
-        </div>
-    </div>
-
-    <audio id="bgm" src="你的音樂網址" loop></audio>
-
-    <script>
-        const GAS = 'https://script.google.com/macros/s/AKfycbxxknkKwWS-Vtqo3pKovAMstLtQrXeyD7DhnILzeeisIBCGHmh03zFjFAdmF47ZXtv_/exec';
-        const audio = document.getElementById('bgm');
-        let isMotionActive = false;
-        let lastX = 0, lastY = 0, lastZ = 0;
-
-        // 1. 貓頭鷹管家 SOS 功能
-        function toggleButler() {
-            const menu = document.getElementById('butler-menu');
-            const isActive = menu.style.transform === 'scale(1)';
-            gsap.to(menu, { scale: isActive ? 0 : 1, duration: 0.4, ease: "back.out(1.7)" });
-        }
-
-        async function sos(msg) {
-            if(!confirm(`確認發送「${msg}」給兒子？`)) return;
-            toggleButler();
-            await fetch(`${GAS}?action=redeem&id=SOS&msg=${encodeURIComponent(msg)}`);
-            alert('訊息已送達！');
-        }
-
-        // 2. 體感指揮家邏輯
-        function requestMotionPermission() {
-            if (typeof DeviceMotionEvent.requestPermission === 'function') {
-                DeviceMotionEvent.requestPermission().then(permissionState => {
-                    if (permissionState === 'granted') startMotion();
-                });
-            } else {
-                startMotion();
-            }
-        }
-
-        function startMotion() {
-            isMotionActive = true;
-            document.getElementById('motion-status').innerText = "指揮中：請揮動手機";
-            window.addEventListener('devicemotion', (event) => {
-                let acc = event.accelerationIncludingGravity;
-                let delta = Math.abs(acc.x - lastX) + Math.abs(acc.y - lastY);
-                if (delta > 15) { // 揮動門檻值
-                    if (audio.paused) audio.play();
-                    animateWaveform();
-                } else {
-                    setTimeout(() => { if(delta < 2) audio.pause(); }, 1500);
-                }
-                lastX = acc.x; lastY = acc.y;
+    function requestMotionPermission() {
+        if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+            DeviceMotionEvent.requestPermission().then(state => {
+                if (state === 'granted') startMotion();
+                else alert("需要允許動作感測才能揮動指揮喔！");
             });
-        }
+        } else { startMotion(); } // Android 或不需權限
+    }
 
-        function animateWaveform() {
-            document.querySelectorAll('.music-bar').forEach(bar => {
-                bar.style.height = Math.random() * 40 + 5 + 'px';
-            });
-        }
-
-        // 3. 抽卡盲盒邏輯
-        async function startGacha() {
-            const overlay = document.getElementById('gacha-overlay');
-            overlay.style.display = 'flex';
+    function startMotion() {
+        const statusEl = document.getElementById('motion-status');
+        const waveEl = document.getElementById('waveform');
+        statusEl.innerText = "連線成功：請揮動手機開始指揮";
+        waveEl.style.opacity = "1";
+        
+        window.addEventListener('devicemotion', (e) => {
+            let acc = e.accelerationIncludingGravity;
+            if(!acc) return;
+            let delta = Math.abs(acc.x - lastX) + Math.abs(acc.y - lastY);
             
-            // 搖晃動畫
-            const tl = gsap.timeline();
-            tl.to("#gacha-cube", { rotation: 10, x: 10, duration: 0.1, repeat: 10, yoyo: true })
-              .to("#gacha-cube", { scale: 15, opacity: 0, duration: 0.5, ease: "expo.in" });
-
-            try {
-                const res = await fetch(`${GAS}?action=gacha`);
-                const data = await res.json();
-                
-                document.getElementById('gacha-result').innerText = "恭喜獲得：\n" + data.title;
-                gsap.to("#gacha-result", { opacity: 1, y: -20, delay: 0.5 });
-                gsap.to("#close-gacha", { opacity: 1, delay: 0.8 });
-                
-                document.getElementById('close-gacha').onclick = () => {
-                    location.reload();
-                };
-            } catch(e) {
-                alert("盲盒空空如也（庫存不足）");
-                overlay.style.display = 'none';
+            if (delta > 8) { // 揮動門檻
+                if (audio.paused) audio.play();
+                document.querySelectorAll('.music-bar').forEach(b => b.style.height = (Math.random()*24 + 4) + 'px');
+            } else {
+                setTimeout(() => { if(delta < 1) { audio.pause(); document.querySelectorAll('.music-bar').forEach(b => b.style.height = '4px'); } }, 1000);
             }
+            lastX = acc.x; lastY = acc.y;
+        });
+    }
+
+    // --- 功能 3：金猴盲盒抽卡 ---
+    async function startGacha() {
+        const overlay = document.getElementById('gacha-overlay');
+        overlay.style.display = 'flex';
+        
+        const tl = gsap.timeline();
+        tl.to("#gacha-cube", { rotation: 15, x: 10, duration: 0.1, repeat: 12, yoyo: true })
+          .to("#gacha-cube", { scale: 12, opacity: 0, duration: 0.6, ease: "expo.in" });
+
+        try {
+            const res = await fetch(`${GAS}?action=gacha`);
+            const text = await res.text();
+            
+            if(text === "EMPTY") { throw new Error("empty"); }
+            
+            const data = JSON.parse(text);
+            document.getElementById('gacha-result').innerText = data.title;
+            
+            gsap.to(["#gacha-result", "#gacha-sub"], { opacity: 1, y: -20, delay: 0.6, stagger: 0.2 });
+            gsap.to("#close-gacha", { opacity: 1, delay: 1 });
+        } catch(e) {
+            document.getElementById('gacha-result').innerText = "今日盲盒已空";
+            gsap.to("#gacha-result", { opacity: 1, y: -20, delay: 0.6 });
+            gsap.to("#close-gacha", { opacity: 1, delay: 1 });
         }
-    </script>
+    }
+
+    // 一般兌換
+    async function redeem(id) {
+      if (!confirm('指紋驗證 (模擬)：確認使用票券？')) return;
+      const pass = document.getElementById('pass-'+id);
+      gsap.to(pass, { scale: 0.9, opacity: 0.5, duration: 0.3 });
+      
+      const res = await fetch(`${GAS}?action=redeem&id=${id}`);
+      if(await res.text() === 'SUCCESS') {
+        gsap.to(pass, { y: -500, opacity: 0, duration: 0.8, ease: "power3.in", onComplete: () => location.reload() });
+      } else {
+        alert("票券失效"); gsap.to(pass, { scale: 1, opacity: 1, duration: 0.3 });
+      }
+    }
+  </script>
 </body>
 </html>
