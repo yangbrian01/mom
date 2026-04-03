@@ -1,97 +1,127 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-TW">
 <head>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mom's Birthday Journey</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Zhi+Mang+Xing&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
   <style>
-    #map { height: 400px; width: 100%; border-radius: 15px; }
-    .glass { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
+    body { font-family: 'Noto Sans TC', sans-serif; background: #fff5f5; }
+    .ghibli-font { font-family: 'Zhi Mang Xing', cursive; }
+    .glass-card { 
+      background: rgba(255, 255, 255, 0.7); 
+      backdrop-filter: blur(8px); 
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      border-radius: 24px;
+    }
+    #map { height: 350px; border-radius: 20px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
+    .custom-marker { filter: drop-shadow(0 0 5px #f472b6); }
+    /* 下載你的貓頭鷹貼圖放在跟 index.html 同層 */
+    .owl-float { animation: floating 3s ease-in-out infinite; }
+    @keyframes floating { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
   </style>
 </head>
-<body class="bg-pink-50 min-h-screen p-4">
-  <div class="max-w-md mx-auto">
-    <header class="text-center py-6">
-      <h1 class="text-2xl font-bold text-pink-600">祝 最愛的媽媽 生日快樂 🎂</h1>
-      <p class="text-gray-500 text-sm">時光足跡與皇家服務系統</p>
+<body class="pb-12">
+
+  <div class="fixed top-0 left-0 w-full h-full -z-10 opacity-20 pointer-events-none">
+    <div class="absolute top-10 left-10 w-32 h-32 bg-pink-300 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-20 right-10 w-40 h-40 bg-blue-200 rounded-full blur-3xl"></div>
+  </div>
+
+  <div class="max-w-md mx-auto px-6">
+    <header class="pt-12 pb-8 text-center animate__animated animate__fadeInDown">
+      <h1 class="ghibli-font text-5xl text-pink-500 mb-2">生日快樂</h1>
+      <p class="text-gray-400 tracking-widest text-sm">2026.04.06 Special Edition</p>
+      <div class="mt-4 owl-float text-4xl">🦉</div>
     </header>
 
-    <section class="mb-8">
-      <h2 class="text-lg font-semibold mb-3">📍 我們的回憶足跡</h2>
-      <div id="map" class="shadow-lg"></div>
+    <section class="mb-10 animate__animated animate__fadeIn">
+      <div class="flex justify-between items-end mb-4">
+        <h2 class="text-xl font-bold text-gray-700">📍 時光旅行地圖</h2>
+        <span class="text-xs text-pink-400">點擊標記喚起回憶</span>
+      </div>
+      <div id="map"></div>
     </section>
 
-    <section>
-      <h2 class="text-lg font-semibold mb-3">🛎️ 皇家服務兌換</h2>
-      <div id="service-list" class="space-y-4">
+    <section class="animate__animated animate__fadeInUp">
+      <h2 class="text-xl font-bold text-gray-700 mb-4">🛎️ 皇家管家服務</h2>
+      <div id="service-list" class="grid gap-4">
         </div>
     </section>
   </div>
 
-  <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-6 z-[1000]">
-    <div class="bg-white p-4 rounded-2xl w-full max-w-sm relative">
-      <button onclick="closeModal()" class="absolute -top-3 -right-3 bg-white rounded-full p-1 shadow">✕</button>
-      <img id="modal-img" src="" class="w-full rounded-lg mb-3">
-      <p id="modal-text" class="text-gray-700 italic"></p>
+  <div id="modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-[2000] flex items-center justify-center p-8" onclick="closeModal()">
+    <div class="glass-card p-4 w-full max-w-sm animate__animated animate__zoomIn" onclick="event.stopPropagation()">
+      <img id="modal-img" src="" class="w-full h-64 object-cover rounded-xl mb-4 shadow-inner">
+      <p id="modal-text" class="text-gray-600 leading-relaxed italic text-center"></p>
+      <button onclick="closeModal()" class="mt-6 w-full py-3 bg-pink-400 text-white rounded-xl shadow-lg">看完了，暖暖的 ❤️</button>
     </div>
   </div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    let map;
-    
-    window.onload = () => {
-      // 初始化地圖 (預設定位在台灣或日本中心)
-      map = L.map('map').setView([35.6895, 139.6917], 5);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    const GAS_URL = '你的_GAS_網頁應用程式網址'; // 記得替換這個！
 
-      // 抓取資料
-      google.script.run.withSuccessHandler(renderApp).getData();
+    let map;
+    window.onload = () => {
+      map = L.map('map', { zoomControl: false }).setView([24.81, 121.03], 8); // 竹北起始
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
+      fetchData();
     };
 
-    function renderApp(data) {
-      // 渲染地圖標記
-      data.memories.forEach(m => {
+    async function fetchData() {
+      const resp = await fetch(`${GAS_URL}?action=getData`);
+      const data = await resp.json();
+      renderMap(data.memories);
+      renderServices(data.services);
+    }
+
+    function renderMap(memories) {
+      memories.forEach(m => {
         L.marker([m[1], m[2]]).addTo(map)
-          .on('click', () => showMemory(m[4], m[3]));
+          .on('click', () => {
+            document.getElementById('modal-img').src = m[4];
+            document.getElementById('modal-text').innerText = m[3];
+            document.getElementById('modal').classList.remove('hidden');
+          });
       });
+    }
 
-      // 渲染服務項目
+    function renderServices(services) {
       const list = document.getElementById('service-list');
-      data.services.forEach(s => {
-        const card = `
-          <div class="glass p-4 rounded-xl shadow-sm border border-pink-100 flex justify-between items-center">
-            <div>
-              <h3 class="font-bold text-gray-800">${s[1]}</h3>
-              <p class="text-xs text-gray-500">${s[2]} (剩餘 ${s[4]} 次)</p>
+      list.innerHTML = services.map(s => `
+        <div class="glass-card p-5 flex justify-between items-center transition-all hover:scale-[1.02] active:scale-95">
+          <div class="flex-1">
+            <h3 class="font-bold text-gray-800 text-lg">${s[1]}</h3>
+            <p class="text-sm text-gray-400">${s[2]}</p>
+            <div class="mt-2 flex gap-2">
+              <span class="px-2 py-0.5 bg-pink-100 text-pink-500 text-[10px] rounded-full font-bold">剩餘 ${s[4]} 次</span>
             </div>
-            <button onclick="redeemItem('${s[0]}')" 
-              class="${s[4] > 0 ? 'bg-pink-500' : 'bg-gray-300'} text-white px-4 py-2 rounded-full text-sm">
-              兌換
-            </button>
           </div>
-        `;
-        list.innerHTML += card;
-      });
+          <button onclick="redeem('${s[0]}')" 
+            class="${s[4] > 0 ? 'bg-pink-500 shadow-pink-200' : 'bg-gray-300'} text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-colors">
+            ${s[4] > 0 ? '🎁' : '❌'}
+          </button>
+        </div>
+      `).join('');
     }
 
-    function showMemory(img, text) {
-      document.getElementById('modal-img').src = img;
-      document.getElementById('modal-text').innerText = text;
-      document.getElementById('modal').classList.remove('hidden');
-    }
-
-    function closeModal() {
-      document.getElementById('modal').classList.add('hidden');
-    }
-
-    function redeemItem(id) {
-      if(confirm('確定要兌換這項皇家服務嗎？')) {
-        google.script.run.withSuccessHandler(res => {
-          if(res === 'SUCCESS') alert('兌換成功！兒子已收到通知！');
-          location.reload();
-        }).redeem(id);
+    async function redeem(id) {
+      if (!confirm('確定要召喚管家（兒子）執行服務嗎？')) return;
+      const resp = await fetch(`${GAS_URL}?action=redeem&id=${id}`);
+      const result = await resp.text();
+      if (result === 'SUCCESS') {
+        alert('召喚成功！我收到通知囉，馬上來！');
+        fetchData();
+      } else {
+        alert('這項服務次數用完囉～');
       }
     }
+
+    function closeModal() { document.getElementById('modal').classList.add('hidden'); }
   </script>
 </body>
 </html>
