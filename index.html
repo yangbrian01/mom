@@ -43,7 +43,7 @@
     .aurora-spirited {
       position: absolute; inset: 0; transform: translate3d(0,0,0); opacity: 0;
       background: radial-gradient(circle at 50% 50%, rgba(153, 27, 27, 0.8) 0%, transparent 40%),
-                  radial-gradient(circle at 80% 20%, rgba(251, 191, 36, 0.6) 0%, transparent 40%),
+                  radial-gradient(circle at 80% 20%, rgba(244, 63, 94, 0.6) 0%, transparent 40%),
                   radial-gradient(circle at 20% 80%, rgba(190, 18, 60, 0.7) 0%, transparent 40%);
       filter: blur(60px) saturate(150%); animation: aurora 25s linear infinite alternate-reverse; transition: opacity 1.5s ease-in-out;
     }
@@ -104,7 +104,9 @@
     .view { 
         position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
         overflow-y: auto; padding-bottom: 120px; -webkit-overflow-scrolling: touch; touch-action: pan-y;
-        padding-top: calc(env(safe-area-inset-top, 40px) + 20px); padding-left: 24px; padding-right: 24px;
+        /* 安全區域 Padding (避開瀏海/動態島) */
+        padding-top: calc(env(safe-area-inset-top, 40px) + 20px);
+        padding-left: 24px; padding-right: 24px;
     }
     .view.active { opacity: 1; pointer-events: auto; transform: scale(1); }
     .view.swipe-left { transform: translateX(-30px); }
@@ -158,7 +160,7 @@
     <div class="relative w-28 h-28 mb-8">
         <div class="absolute inset-0 border-4 border-indigo-500 rounded-3xl opacity-30"></div>
         <div class="absolute inset-0 flex items-center justify-center text-indigo-400">
-            <svg class="w-16 h-16 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="w-16 h-16 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
                 <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
                 <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
@@ -228,7 +230,7 @@
       <button onclick="document.getElementById('tour-complete-overlay').style.display='none'" class="mt-10 px-8 py-3 spatial-glass rounded-full text-sm font-bold uppercase tracking-widest active:scale-95 transition-transform">返回系統</button>
   </div>
 
-  <main id="view-home" class="view active px-6 pt-12">
+  <main id="view-home" class="view active">
     <h3 id="dynamic-greeting" class="text-xs font-bold tracking-widest text-indigo-300 mb-2 text-glow uppercase"></h3>
     <header class="mb-6 animate__animated animate__fadeInDown">
       <h1 class="text-6xl font-black tracking-tighter text-glow serif-font">母后，生日快樂</h1>
@@ -344,8 +346,10 @@
   <audio id="map-bgm" src="你的千與千尋配樂網址" loop preload="auto"></audio>
 
   <script>
-    // 【完美修復 3】GAS 後端需要更新，讀取 D2 單元格作為 widgetPhotoUrl
-    const GAS = 'https://script.google.com/macros/s/AKfycb.../exec'; 
+    // 【完美修復 1：紅筆除錯】最關鍵的一行！
+    // 學弟，你忘記替換這個 GAS URL 了！
+    // 請將下方預留位置替換為你部署的 GAS Web App 網址。
+    const GAS = 'https://script.google.com/macros/s/AKfycbxxknkKwWS-Vtqo3pKovAMstLtQrXeyD7DhnILzeeisIBCGHmh03zFjFAdmF47ZXtv_/exec'; 
     let map, mapMarkers = [], memoriesData = [], servicesData = []; 
     let audio = document.getElementById('bgm'), mapAudio = document.getElementById('map-bgm');
     let isGachaRunning = false, isRequesting = false, isTouring = false, hasUnlockedAudio = false;
@@ -528,14 +532,26 @@
       }
 
       // 非同步資料抓取
-      const fetchPromise = fetch(`${GAS}?action=getData`).then(res => res.json()).catch(err => null);
+      // 學弟，這裡的 GAS URL 必須替換！
+      const fetchPromise = fetch(`${GAS}?action=getData`).then(res => res.json()).catch(err => {
+          console.error("Initialization error:", err);
+          return null;
+      });
+
+      // 【除錯提示】：如果 fetch 失敗，顯示錯誤
+      fetchPromise.then(data => {
+          if (!data) {
+              console.error("Failed to fetch data from GAS. Check URL and permissions.");
+              showIsland('❌', '系統初始化失敗');
+          }
+      });
 
       // 資料處理
       fetchPromise.then(data => {
           if(data) {
               memoriesData = data.memories || []; servicesData = data.services || [];
               
-              // 【完美修復 3】首頁 Widget 照片：從試算表讀取 widgetPhotoUrl
+              // 首頁 Widget 照片：從試算表讀取 widgetPhotoUrl (D2)
               if (data.widgetPhotoUrl) {
                 document.getElementById('widget-photo-slide').src = data.widgetPhotoUrl;
               }
@@ -572,7 +588,7 @@
           }
       });
 
-      // 【完美修復 2】Face ID 時間：延長至 3.5s (3500ms)
+      // Face ID 時間：延長至 3.5s (3500ms)
       if (!skipFaceId) {
           setTimeout(() => {
               document.getElementById('lock-text').innerText = '身分確認：最尊貴的母后大人';
