@@ -40,7 +40,6 @@
                   radial-gradient(circle at 20% 80%, rgba(14, 165, 233, 0.6) 0%, transparent 40%);
       filter: blur(60px) saturate(150%); animation: aurora 25s linear infinite alternate; transition: opacity 1.5s ease-in-out;
     }
-    /* 神隱少女專屬主題：大紅與燙金 */
     .aurora-spirited {
       position: absolute; inset: 0; transform: translate3d(0,0,0); opacity: 0;
       background: radial-gradient(circle at 50% 50%, rgba(153, 27, 27, 0.8) 0%, transparent 40%),
@@ -50,7 +49,7 @@
     }
     @keyframes aurora { 0% { transform: rotate(0deg) scale(1); } 100% { transform: rotate(360deg) scale(1.1); } }
 
-    /* 空間卡片與全息反光 (Holographic Glare) */
+    /* 空間卡片與全息反光 */
     .spatial-glass {
       position: relative; overflow: hidden;
       background: var(--glass-bg); backdrop-filter: blur(25px) saturate(180%); -webkit-backdrop-filter: blur(25px) saturate(180%);
@@ -71,6 +70,14 @@
         display: flex; align-items: center; gap: 12px; z-index: 10000;
         box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);
     }
+
+    .shine-effect { position: relative; overflow: hidden; }
+    .shine-effect::before {
+      content: ''; position: absolute; top: 0; left: -150%; width: 50%; height: 100%;
+      background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+      transform: skewX(-25deg); animation: shine 4s infinite; z-index: 10; pointer-events: none;
+    }
+    @keyframes shine { 0% { left: -150%; } 20% { left: 200%; } 100% { left: 200%; } }
 
     @keyframes scan { 0%, 100% { top: 0; opacity: 0; } 10%, 90% { opacity: 1; } 50% { top: 100%; } }
     .animate-scan { animation: scan 2s ease-in-out infinite; }
@@ -100,7 +107,6 @@
 
     .music-bar { width: 4px; background: white; border-radius: 2px; transition: height 0.1s; display: inline-block; margin: 0 2px; }
     
-    /* 魔法彈跳掉落動畫 */
     .leaflet-marker-icon { animation: markerDrop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
     @keyframes markerDrop {
         0% { transform: translateY(-200px) scaleY(1.5); opacity: 0; }
@@ -131,7 +137,10 @@
 </head>
 <body>
 
-  <div id="dynamic-island"><span id="di-icon" class="text-xl">✅</span><span id="di-text" class="text-sm font-bold tracking-widest text-white"></span></div>
+  <div id="dynamic-island">
+      <span id="di-icon" class="text-xl">✅</span>
+      <span id="di-text" class="text-sm font-bold tracking-widest text-white"></span>
+  </div>
 
   <div id="lock-screen" class="fixed inset-0 bg-[#050505] z-[9999] flex flex-col items-center justify-center transition-opacity duration-1000">
     <div class="relative w-28 h-28 mb-8">
@@ -143,9 +152,9 @@
                 <path d="M9 9h.01"></path><path d="M15 9h.01"></path><path d="M12 12v3"></path><path d="M8 16a4 4 0 0 0 8 0"></path>
             </svg>
         </div>
-        <div class="absolute top-0 left-0 w-full h-1 bg-indigo-400 shadow-[0_0_20px_#818cf8] animate-scan"></div>
+        <div class="absolute top-0 left-0 w-full h-1 bg-indigo-400 shadow-[0_0_20px_#818cf8] animate-scan" id="scan-line"></div>
     </div>
-    <h2 id="lock-text" class="text-indigo-400 font-bold tracking-[0.4em] uppercase text-xs animate-pulse">Face ID</h2>
+    <h2 id="lock-text" class="text-indigo-400 font-bold tracking-[0.4em] uppercase text-xs animate-pulse">Scanning Bio-Data...</h2>
   </div>
 
   <div id="parallax-bg">
@@ -194,6 +203,13 @@
       </div>
   </div>
 
+  <div id="tour-complete-overlay" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[3000] hidden flex-col items-center justify-center text-center px-6">
+      <div class="text-6xl mb-6 animate-bounce">✈️</div>
+      <h2 class="text-3xl font-black text-white text-glow mb-2 serif-font">旅程回顧完成</h2>
+      <p class="text-sm text-white/70 tracking-widest leading-relaxed mt-4">我們一起走過的路，都是最珍貴的回憶。<br>未來還要一起去更多地方！</p>
+      <button onclick="document.getElementById('tour-complete-overlay').style.display='none'" class="mt-10 px-8 py-3 spatial-glass rounded-full text-sm font-bold uppercase tracking-widest active:scale-95 transition-transform">返回系統</button>
+  </div>
+
   <main id="view-home" class="view active px-6 pt-12">
     <h3 id="dynamic-greeting" class="text-xs font-bold tracking-widest text-indigo-300 mb-2 text-glow uppercase"></h3>
     <header class="mb-6 animate__animated animate__fadeInDown">
@@ -229,7 +245,7 @@
         </div>
     </div>
 
-    <div id="music-card" class="spatial-glass rounded-[32px] p-8 mb-6 magnetic cursor-pointer select-none">
+    <div id="music-card" class="spatial-glass shine-effect rounded-[32px] p-8 mb-6 magnetic cursor-pointer select-none">
       <div class="flex items-center justify-between mb-4 relative z-10">
         <div class="flex items-center gap-4">
             <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-orange-400 to-rose-400 flex items-center justify-center text-2xl shadow-[0_0_30px_rgba(251,146,60,0.4)]">🎶</div>
@@ -244,7 +260,7 @@
       </div>
       <div class="h-px w-full bg-white/10 my-4 relative z-10"></div>
       <div class="flex justify-between items-center relative z-10">
-          <p id="motion-status" class="text-xs font-bold tracking-widest text-orange-300 uppercase text-glow">長按解鎖密函 / 揮動指揮節奏</p>
+          <p id="motion-status" class="text-xs font-bold tracking-widest text-orange-300 uppercase text-glow">長按解鎖密函 / 點擊揮動指揮</p>
           <p class="text-[10px] text-white/50 italic text-glow">Conducted by Your Son</p>
       </div>
     </div>
@@ -282,7 +298,7 @@
   <main id="view-map" class="view px-6 pt-16 relative">
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-3xl font-black text-white drop-shadow-lg text-glow serif-font">千與千尋的足跡</h2>
-        <button onclick="startMapTour()" class="spatial-glass px-4 py-2 rounded-full text-xs font-bold tracking-widest uppercase flex items-center gap-2 active:scale-95 transition-transform text-glow">▶ 導覽</button>
+        <button onclick="startMapTour()" class="spatial-glass px-4 py-2 rounded-full text-xs font-bold tracking-widest uppercase flex items-center gap-2 active:scale-95 transition-transform text-glow">▶ 自動導覽</button>
     </div>
     <div id="leaflet-map" class="spatial-glass"></div>
   </main>
@@ -308,7 +324,7 @@
     <div class="dock-btn" id="tab-wallet" onclick="switchTab('wallet')">🎫</div>
   </nav>
 
-  <audio id="bgm" src="你的獨奏音樂網址" loop preload="auto" preservesPitch="true"></audio>
+  <audio id="bgm" src="你的音樂網址" loop preload="auto" preservesPitch="true"></audio>
   <audio id="map-bgm" src="你的千與千尋配樂網址" loop preload="auto"></audio>
 
   <script>
@@ -317,15 +333,14 @@
     let audio = document.getElementById('bgm'), mapAudio = document.getElementById('map-bgm');
     let isGachaRunning = false, isRequesting = false, isTouring = false, hasUnlockedAudio = false;
 
-    // --- 【全螢幕手勢切換 (完美解衝突版)】 ---
+    // --- 全螢幕手勢切換 (Swipe Gestures) ---
     const tabs = ['home', 'map', 'wallet'];
     let currentTabIdx = 0;
     let touchStartX = 0, touchStartY = 0;
 
     document.addEventListener('touchstart', e => {
         if(e.target.closest('#leaflet-map') || document.getElementById('photobooth-modal').style.display === 'flex') return;
-        touchStartX = e.changedTouches[0].screenX;
-        touchStartY = e.changedTouches[0].screenY;
+        touchStartX = e.changedTouches[0].screenX; touchStartY = e.changedTouches[0].screenY;
     }, {passive: true});
 
     document.addEventListener('touchend', e => {
@@ -333,7 +348,6 @@
         let deltaX = e.changedTouches[0].screenX - touchStartX;
         let deltaY = e.changedTouches[0].screenY - touchStartY;
         
-        // 只有水平滑動幅度遠大於垂直滑動時，才觸發分頁切換，避免干擾上下捲動
         if (Math.abs(deltaX) > 70 && Math.abs(deltaY) < 50) {
             if (deltaX < 0 && currentTabIdx < tabs.length - 1) switchTab(tabs[currentTabIdx + 1], 'left');
             else if (deltaX > 0 && currentTabIdx > 0) switchTab(tabs[currentTabIdx - 1], 'right');
@@ -348,16 +362,12 @@
         document.getElementById('tab-' + id).classList.add('active');
 
         document.querySelectorAll('.view').forEach(v => {
-            if(v.id === 'view-' + id) {
-                v.className = 'view active';
-            } else {
-                if(direction === 'left') v.className = 'view swipe-left';
-                else if (direction === 'right') v.className = 'view swipe-right';
-                else v.className = 'view';
-            }
+            if(v.id === 'view-' + id) v.className = 'view active';
+            else if(direction === 'left') v.className = 'view swipe-left';
+            else if (direction === 'right') v.className = 'view swipe-right';
+            else v.className = 'view';
         });
         
-        // 【神隱少女主題無縫漸變】
         if(id === 'map') {
             document.getElementById('bg-spirited').style.opacity = '1';
             document.getElementById('bg-default').style.opacity = '0';
@@ -368,12 +378,11 @@
             isTouring = false;
         }
 
-        // 音軌淡出處理
-        if(id !== 'home' && !audio.paused) gsap.to(audio, { volume: 0, duration: 0.8, onComplete: () => { audio.pause(); }});
+        if(id !== 'home' && !audio.paused) gsap.to(audio, { volume: 0, duration: 0.8, onComplete: () => audio.pause() });
         if(id !== 'map' && !mapAudio.paused) gsap.to(mapAudio, { volume: 0, duration: 1, onComplete: () => mapAudio.pause() });
     }
 
-    // --- 時光膠囊照片輪播 ---
+    // --- 照片輪播 & 日夜問候 ---
     setInterval(() => {
         const slides = document.querySelectorAll('.photo-slide');
         let activeIdx = Array.from(slides).findIndex(s => s.classList.contains('active'));
@@ -409,137 +418,200 @@
     }
     function triggerConfetti() { confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#6366F1', '#F43F5E', '#FBBF24'] }); }
 
-    // --- 完美分離的 Face ID 載入邏輯 ---
+    function updateCountdown() {
+        const now = new Date(); const bday = new Date('2026-04-06T00:00:00'); const endBday = new Date('2026-04-06T23:59:59');
+        if (now > endBday) {
+            document.getElementById('countdown-text').innerText = "任務圓滿達成 ✨";
+            if(!sessionStorage.getItem('fireworks_done')) { triggerFireworks(); sessionStorage.setItem('fireworks_done', 'true'); }
+        } else if (now >= bday && now <= endBday) {
+            document.getElementById('countdown-text').innerText = "今天是專屬節日 🎂";
+            if(!sessionStorage.getItem('bday_fireworks')) { triggerFireworks(); sessionStorage.setItem('bday_fireworks', 'true'); }
+        } else {
+            const diff = bday - now;
+            const d = Math.floor(diff / (1000 * 60 * 60 * 24)); const h = Math.floor((diff / (1000 * 60 * 60)) % 24); const m = Math.floor((diff / 1000 / 60) % 60);
+            document.getElementById('countdown-text').innerText = `${d}天 ${h}時 ${m}分`;
+        }
+    }
+    setInterval(updateCountdown, 1000); updateCountdown();
+    function triggerFireworks() {
+      var end = Date.now() + 5000;
+      (function frame() {
+        confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#6366F1', '#F43F5E'] });
+        confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#FBBF24', '#34D399'] });
+        if (Date.now() < end) requestAnimationFrame(frame);
+      }());
+    }
+
+    // --- 長按解鎖打字機密函 ---
+    let pressTimer; let isTyping = false;
+    const musicCard = document.getElementById('music-card');
+    const secretContent = "驚喜嗎？這是我特別藏的秘密功能。\n\n寫這個系統比以前做訂餐系統還要花心思，因為這是專屬妳的 2026 生日禮物。\n謝謝妳一直包容我，陪我準備報考北藝大，陪我去日本留下那麼多回憶。\n\n接下來的日子，也請多多指教！生日快樂！";
+    
+    function startPress(e) {
+        if(e.type === 'touchstart') e.preventDefault(); 
+        gsap.to(musicCard, { scale: 0.95, duration: 0.2 }); 
+        pressTimer = setTimeout(() => {
+            triggerVibration('success');
+            document.getElementById('secret-letter-modal').style.display = 'flex';
+            gsap.fromTo('#secret-letter-content', {y: 100, opacity: 0}, {y: 0, opacity: 1, duration: 0.8, ease: "back.out(1.2)"});
+            if(!isTyping) {
+                isTyping = true;
+                const container = document.getElementById('secret-text-container'); container.innerHTML = "";
+                let i = 0;
+                function typeWriter() {
+                    if (i < secretContent.length) {
+                        container.innerHTML += secretContent.charAt(i) === '\n' ? '<br>' : secretContent.charAt(i);
+                        if(secretContent.charAt(i) !== '\n') triggerVibration('tick');
+                        i++; setTimeout(typeWriter, 60);
+                    } else {
+                        gsap.to('#secret-sign', { opacity: 1, duration: 1 }); gsap.to('#secret-close-btn', { opacity: 1, duration: 1, delay: 0.5 }); triggerConfetti();
+                    }
+                }
+                setTimeout(typeWriter, 800);
+            }
+        }, 1500);
+    }
+    function cancelPress() { clearTimeout(pressTimer); gsap.to(musicCard, { scale: 1, duration: 0.2 }); }
+
+    musicCard.addEventListener('touchstart', startPress, {passive: false});
+    musicCard.addEventListener('touchend', () => { cancelPress(); requestMotionPermission(); }); 
+    musicCard.addEventListener('touchmove', cancelPress);
+    musicCard.addEventListener('mousedown', startPress);
+    musicCard.addEventListener('mouseup', () => { cancelPress(); requestMotionPermission(); });
+    musicCard.addEventListener('mouseleave', cancelPress);
+
+    function closeSecretLetter() { gsap.to('#secret-letter-content', {y: 50, opacity: 0, duration: 0.4, onComplete: () => { document.getElementById('secret-letter-modal').style.display = 'none'; }}); }
+
+    function initMagnetic() {
+      document.querySelectorAll('.magnetic').forEach(btn => {
+        btn.addEventListener('mousemove', (e) => {
+          const rect = btn.getBoundingClientRect();
+          gsap.to(btn, { x: (e.clientX - rect.left - rect.width/2)*0.1, y: (e.clientY - rect.top - rect.height/2)*0.1, duration: 0.4, ease: "power2.out" });
+        });
+        btn.addEventListener('mouseleave', () => gsap.to(btn, { x: 0, y: 0, duration: 0.7, ease: "elastic.out(1, 0.3)" }));
+      });
+    }
+
+    function initMap() {
+      map = L.map('leaflet-map', { zoomControl: false }).setView([35.0, 135.7], 5);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
+    }
+
+    let viewedMemories = new Set();
+    function checkMapCompletion() {
+        if(viewedMemories.size === memoriesData.length && memoriesData.length > 0) {
+            if(!sessionStorage.getItem('map_completed')) {
+                sessionStorage.setItem('map_completed', 'true');
+                setTimeout(() => { document.getElementById('tour-complete-overlay').style.display = 'flex'; triggerFireworks(); triggerVibration('success'); }, 1000);
+            }
+        }
+    }
+
+    // --- 【修復：絕對防禦版 Face ID 流程】 ---
     window.onload = async () => {
       initMap();
       
-      // 無論如何，確保 Face ID 儀式會順利完成並進入主畫面
+      const skipFaceId = sessionStorage.getItem('skip_face_id');
       const lockScreen = document.getElementById('lock-screen');
-      if (!sessionStorage.getItem('skip_face_id')) {
+      
+      if (skipFaceId) {
+          sessionStorage.removeItem('skip_face_id'); // 銷毀免通行證
+          lockScreen.style.display = 'none';
+          document.getElementById('view-home').classList.add('active');
+      } else {
           lockScreen.style.display = 'flex';
+      }
+
+      // 獨立的資料抓取，與動畫脫鉤
+      const fetchPromise = fetch(`${GAS}?action=getData`).then(res => {
+          if (!res.ok) throw new Error('Network error');
+          return res.text();
+      }).then(text => {
+          if (text.startsWith('<')) throw new Error('GAS returned HTML (CORS or Deployment error).');
+          return JSON.parse(text);
+      }).catch(err => {
+          console.error("System Initialization Error:", err);
+          return null; // 容錯
+      });
+
+      // 資料處理
+      fetchPromise.then(data => {
+          if(data) {
+              memoriesData = data.memories || [];
+              servicesData = data.services || [];
+
+              memoriesData.forEach((m, i) => {
+                const redIcon = new L.Icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], className: 'marker-drop'
+                });
+                const marker = L.marker([m[1], m[2]], { icon: redIcon }).addTo(map);
+                marker.bindPopup(`
+                    <div style="color:#000; width:220px;">
+                        <div class="popup-img-container" style="margin-bottom:10px;"><img src="${m[4]}"></div>
+                        <div style="padding: 0 8px 8px 8px;"><b style="font-size:16px; display:block; margin-bottom:4px;">${m[0]}</b><p style="font-size:12px; color:#666; line-height:1.4; margin:0;">${m[3]}</p></div>
+                    </div>
+                `);
+                marker.on('click', () => { viewedMemories.add(i); checkMapCompletion(); });
+                mapMarkers.push(marker);
+              });
+
+              document.getElementById('service-list').innerHTML = servicesData.map(s => `
+                <div class="wallet-pass" id="pass-${s[0]}">
+                  <div class="flex justify-between items-start mb-8">
+                    <div><p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Official Voucher</p><h4 class="font-black text-2xl">${s[1]}</h4></div>
+                    <div class="w-12 h-12 bg-black rounded-xl flex items-center justify-center text-white text-xl">🦉</div>
+                  </div>
+                  <div class="flex justify-between items-end mt-12">
+                    <div><p class="text-[10px] text-gray-400 uppercase tracking-widest">Detail</p><p class="text-sm font-bold text-gray-800">${s[2]}</p></div>
+                    <div class="text-right"><p class="text-[10px] text-gray-400 uppercase tracking-widest">Valid</p><p class="text-xl font-black text-indigo-600">${s[4]} <span class="text-sm text-gray-400 font-normal">left</span></p></div>
+                  </div>
+                  <div class="absolute inset-0 bg-white/0 flex items-center justify-center opacity-0 hover:bg-white/90 hover:opacity-100 transition-all rounded-20px cursor-pointer backdrop-blur-sm" onclick="redeem('${s[0]}', this)">
+                      <span class="btn-text bg-black text-white px-8 py-3 rounded-full font-bold shadow-2xl tracking-widest uppercase transition-all">Tap to Excute</span>
+                  </div>
+                </div>`).join('');
+          }
+          initMagnetic();
+      });
+
+      // 獨立的 Face ID 解鎖流程 (保證 2.5 秒後一定解開)
+      if (!skipFaceId) {
           setTimeout(() => {
-              document.getElementById('lock-text').innerText = "Face ID Verified";
+              document.getElementById('lock-text').innerText = '身分確認：最尊貴的母后大人';
+              document.getElementById('lock-text').style.color = '#34d399';
+              document.getElementById('lock-text').classList.remove('animate-pulse');
+              const scanLine = document.getElementById('scan-line');
+              if(scanLine) scanLine.style.display = 'none';
               triggerVibration('success');
+              
               setTimeout(() => {
                   lockScreen.style.opacity = '0';
                   document.getElementById('view-home').classList.add('active');
-                  sessionStorage.setItem('skip_face_id', 'true');
-                  setTimeout(() => lockScreen.style.display = 'none', 1000);
-              }, 800);
-          }, 2500); // 強制看 2.5 秒的解鎖動畫
-      } else {
-          document.getElementById('view-home').classList.add('active');
+                  setTimeout(() => { lockScreen.style.display = 'none'; }, 1000);
+              }, 1000);
+          }, 2500); // 強制 2.5 秒儀式感
       }
 
-      // 背景默默抓取資料，不卡 UI
-      try {
-        const res = await fetch(`${GAS}?action=getData`);
-        const data = await res.json();
-        memoriesData = data.memories; servicesData = data.services;
-
-        memoriesData.forEach((m, i) => {
-          const redIcon = new L.Icon({
-              iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-              shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-              iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], className: 'marker-drop'
-          });
-          const marker = L.marker([m[1], m[2]], { icon: redIcon }).addTo(map);
-          marker.bindPopup(`
-              <div style="color:#000; width:220px;">
-                  <div class="popup-img-container" style="margin-bottom:10px;"><img src="${m[4]}"></div>
-                  <div style="padding: 0 8px 8px 8px;"><b style="font-size:16px; display:block; margin-bottom:4px;">${m[0]}</b><p style="font-size:12px; color:#666; line-height:1.4; margin:0;">${m[3]}</p></div>
-              </div>
-          `);
-          mapMarkers.push(marker);
-        });
-
-        document.getElementById('service-list').innerHTML = servicesData.map(s => `
-          <div class="wallet-pass" id="pass-${s[0]}">
-            <div class="flex justify-between items-start mb-8">
-              <div><p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Official Voucher</p><h4 class="font-black text-2xl">${s[1]}</h4></div>
-              <div class="w-12 h-12 bg-black rounded-xl flex items-center justify-center text-white text-xl">🦉</div>
-            </div>
-            <div class="flex justify-between items-end mt-12">
-              <div><p class="text-[10px] text-gray-400 uppercase tracking-widest">Detail</p><p class="text-sm font-bold text-gray-800">${s[2]}</p></div>
-              <div class="text-right"><p class="text-[10px] text-gray-400 uppercase tracking-widest">Valid</p><p class="text-xl font-black text-indigo-600">${s[4]} <span class="text-sm text-gray-400 font-normal">left</span></p></div>
-            </div>
-            <div class="absolute inset-0 bg-white/0 flex items-center justify-center opacity-0 hover:bg-white/90 hover:opacity-100 transition-all rounded-20px cursor-pointer backdrop-blur-sm" onclick="redeem('${s[0]}', this)">
-                <span class="btn-text bg-black text-white px-8 py-3 rounded-full font-bold shadow-2xl tracking-widest uppercase transition-all">Tap to Excute</span>
-            </div>
-          </div>`).join('');
-
-        initMagnetic();
-      } catch (e) { console.log("背景載入資料失敗", e); }
+      // 觸控解鎖 iOS 陀螺儀限制
+      document.addEventListener('pointerdown', () => {
+          if(!hasUnlockedAudio) { 
+              audio.play().then(() => audio.pause()).catch(()=>{}); 
+              mapAudio.play().then(() => mapAudio.pause()).catch(()=>{}); 
+              hasUnlockedAudio = true; 
+          }
+          if(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission !== 'function') {
+              window.addEventListener('deviceorientation', (e) => {
+                  if(!e.gamma || !e.beta) return;
+                  const x = (e.gamma / 90) * 30; const y = ((e.beta - 45) / 90) * 30; 
+                  document.getElementById('parallax-bg').style.transform = `translate3d(${x}px, ${y}px, 0)`;
+                  document.documentElement.style.setProperty('--glare-x', `${(e.gamma / 90) * 100 + 50}%`);
+                  document.documentElement.style.setProperty('--glare-y', `${((e.beta - 45) / 90) * 100 + 50}%`);
+              });
+          }
+      }, { once: true });
     };
 
-    // --- 【極致物理感：全息反光與視差】 ---
-    window.addEventListener('deviceorientation', (e) => {
-        if(!e.gamma || !e.beta) return;
-        // 背景視差
-        const x = (e.gamma / 90) * 30; 
-        const y = ((e.beta - 45) / 90) * 30; 
-        document.getElementById('parallax-bg').style.transform = `translate3d(${x}px, ${y}px, 0)`;
-        
-        // 玻璃卡片金屬反光 (Apple Card Glare)
-        const glareX = (e.gamma / 90) * 100 + 50;
-        const glareY = ((e.beta - 45) / 90) * 100 + 50;
-        document.documentElement.style.setProperty('--glare-x', `${glareX}%`);
-        document.documentElement.style.setProperty('--glare-y', `${glareY}%`);
-    });
-
-    // --- 【真正的指揮家：BPM 變速引擎】 ---
-    let lastX = 0, lastY = 0;
-    let targetRate = 0, currentRate = 0;
-
-    function requestMotionPermission() {
-        if(pressTimer) return;
-        triggerVibration('light'); 
-        
-        // 音訊預解鎖
-        audio.play().then(() => audio.pause()).catch(()=>{});
-        
-        const reqMotion = (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') ? DeviceMotionEvent.requestPermission() : Promise.resolve('granted');
-        Promise.all([reqMotion]).then(states => {
-            if (states.every(s => s === 'granted')) {
-                document.getElementById('motion-status').innerText = "指揮家模式啟動：請揮動手機";
-                startConductorEngine();
-            }
-        }).catch(console.error);
-    }
-
-    function startConductorEngine() {
-        // 捕捉加速度轉換為 BPM 目標速率
-        window.addEventListener('devicemotion', (e) => {
-            let acc = e.accelerationIncludingGravity; if(!acc) return;
-            let delta = Math.abs(acc.x - lastX) + Math.abs(acc.y - lastY);
-            
-            if (delta > 5) {
-                // 揮越快，數值越高，最高 1.5 倍速，最低 0.5 倍速
-                targetRate = Math.min(1.5, 0.5 + (delta / 20));
-                if (audio.paused) { audio.volume = 1; audio.play(); }
-                document.querySelectorAll('.music-bar').forEach(b => b.style.height = (Math.random()*24 + 4) + 'px');
-            }
-            lastX = acc.x; lastY = acc.y;
-        });
-
-        // 平滑漸變迴圈 (RequestAnimationFrame)
-        function updateAudioPlayback() {
-            if (!audio.paused) {
-                currentRate += (targetRate - currentRate) * 0.1; // 彈性漸變
-                if (currentRate < 0.1) {
-                    audio.pause(); targetRate = 0;
-                    document.querySelectorAll('.music-bar').forEach(b => b.style.height = '4px');
-                } else {
-                    audio.playbackRate = Math.max(0.1, currentRate);
-                }
-                targetRate *= 0.95; // 動力衰減 (沒揮動時會慢慢降速到停)
-            }
-            requestAnimationFrame(updateAudioPlayback);
-        }
-        updateAudioPlayback();
-    }
-
-    // --- 管家 SOS ---
     async function sos(msg) {
         if (isRequesting) return;
         triggerVibration('light');
@@ -550,7 +622,70 @@
         finally { isRequesting = false; }
     }
 
-    // --- 盲盒抽卡 (前端純運算，不卡頓) ---
+    async function sendWish() {
+        const input = document.getElementById('wish-input'); const wish = input.value.trim();
+        if(!wish) return alert('請輸入願望！');
+        if(isRequesting) return;
+        isRequesting = true; showIsland('⏳', '願望發射中...');
+        try { await fetch(`${GAS}?action=redeem&id=SOS&msg=${encodeURIComponent("🌟 [皇家許願池] " + wish)}`); showIsland('✨', '願望已傳達！'); triggerConfetti(); input.value = ''; } 
+        catch(e) { showIsland('❌', '傳送失敗'); } finally { isRequesting = false; }
+    }
+
+    // --- 【終極體感】真正的指揮家 (BPM Rate 引擎) ---
+    let targetRate = 0, currentRate = 0;
+    function requestMotionPermission() {
+        if(pressTimer) return;
+        triggerVibration('light'); 
+        audio.play().then(() => audio.pause()).catch(()=>{});
+        
+        const reqMotion = (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') ? DeviceMotionEvent.requestPermission() : Promise.resolve('granted');
+        const reqOrientation = (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') ? DeviceOrientationEvent.requestPermission() : Promise.resolve('granted');
+        
+        Promise.all([reqMotion, reqOrientation]).then(states => {
+            if (states.every(s => s === 'granted')) {
+                document.getElementById('motion-status').innerText = "指揮家模式：請揮動手機";
+                startConductorEngine();
+            } else { alert("需允許動作感測喔！"); }
+        }).catch(console.error);
+    }
+
+    function startConductorEngine() {
+        window.addEventListener('devicemotion', (e) => {
+            let acc = e.accelerationIncludingGravity; if(!acc) return;
+            let delta = Math.abs(acc.x - lastX) + Math.abs(acc.y - lastY);
+            if (delta > 4) { 
+                targetRate = Math.min(1.6, 0.5 + (delta / 25)); // 根據揮動幅度決定速率
+                if (audio.paused) { audio.volume = 1; audio.play(); }
+                document.querySelectorAll('.music-bar').forEach(b => b.style.height = (Math.random()*24 + 4) + 'px');
+            }
+            lastX = acc.x; lastY = acc.y;
+        });
+
+        function updatePlayback() {
+            if (!audio.paused) {
+                currentRate += (targetRate - currentRate) * 0.1;
+                if (currentRate < 0.15) {
+                    audio.pause(); targetRate = 0;
+                    document.querySelectorAll('.music-bar').forEach(b => b.style.height = '4px');
+                } else {
+                    audio.playbackRate = Math.max(0.1, currentRate);
+                }
+                targetRate *= 0.94; // 自然漸慢停止
+            }
+            requestAnimationFrame(updatePlayback);
+        }
+        updatePlayback();
+        
+        // 綁定陀螺儀視差與反光 (補獲 iOS 解鎖後的事件)
+        window.addEventListener('deviceorientation', (e) => {
+            if(!e.gamma || !e.beta) return;
+            const x = (e.gamma / 90) * 30; const y = ((e.beta - 45) / 90) * 30; 
+            document.getElementById('parallax-bg').style.transform = `translate3d(${x}px, ${y}px, 0)`;
+            document.documentElement.style.setProperty('--glare-x', `${(e.gamma / 90) * 100 + 50}%`);
+            document.documentElement.style.setProperty('--glare-y', `${((e.beta - 45) / 90) * 100 + 50}%`);
+        });
+    }
+
     function startGacha() {
         if (isGachaRunning) return;
         const available = servicesData.filter(s => s[4] > 0);
@@ -566,15 +701,18 @@
           .to("#gacha-cube", { scale: 12, opacity: 0, duration: 0.6, ease: "expo.in", onComplete: () => {
               clearInterval(tickInterval);
               const isSSR = Math.random() < 0.05;
+              let resultItem = null;
 
               if (isSSR) {
                   fetch(`${GAS}?action=redeem&id=SOS&msg=${encodeURIComponent("🐎 [SSR] 召喚老馬代打：爸爸去買宵夜")}`);
                   document.getElementById('gacha-result').innerHTML = "✨ SSR 極稀有 ✨<br>🐎 召喚老馬代打";
-                  document.getElementById('gacha-actions').innerHTML = `<button onclick="location.reload()" class="w-full py-3 bg-yellow-500 text-black rounded-full font-bold shadow-lg">驚喜收下</button>`;
+                  document.getElementById('gacha-result').classList.add('ssr-glow');
+                  document.getElementById('gacha-actions').innerHTML = `<button onclick="keepGacha()" class="w-full py-3 bg-yellow-500 text-black rounded-full font-bold shadow-lg">驚喜收下</button>`;
                   triggerVibration('ssr');
               } else {
-                  let resultItem = available[Math.floor(Math.random() * available.length)];
+                  resultItem = available[Math.floor(Math.random() * available.length)];
                   document.getElementById('gacha-result').innerText = "獲得：\n" + resultItem[1];
+                  document.getElementById('gacha-result').classList.remove('ssr-glow');
                   const redeemBtn = document.getElementById('gacha-redeem-btn');
                   redeemBtn.onclick = () => { redeem(resultItem[0], redeemBtn); };
                   triggerVibration('success');
@@ -586,7 +724,7 @@
           }});
     }
 
-    function keepGacha() { location.reload(); }
+    function keepGacha() { sessionStorage.setItem('skip_face_id', 'true'); location.reload(); }
 
     async function redeem(id, btnEl) {
       if (isRequesting) return;
@@ -601,17 +739,15 @@
           const text = await res.text();
           if(text === 'SUCCESS') {
             btnEl.innerText = '✨ 成功'; triggerConfetti(); triggerVibration('success');
-            setTimeout(() => { location.reload(); }, 1500);
+            if(pass) gsap.to(pass, { y: -500, opacity: 0, duration: 0.8, ease: "power3.in", delay: 0.5 });
+            setTimeout(() => { sessionStorage.setItem('skip_face_id', 'true'); location.reload(); }, 1500);
           } else { alert("失敗或忙碌中"); btnEl.innerText = originalText; if(pass) gsap.to(pass, { scale: 1, opacity: 1 }); }
-      } catch(e) { alert('連線超時'); btnEl.innerText = originalText; } finally { isRequesting = false; }
+      } catch(e) { alert('連線超時'); btnEl.innerText = originalText; if(pass) gsap.to(pass, { scale: 1, opacity: 1 }); } finally { isRequesting = false; }
     }
 
-    // --- 地圖自動導覽 (雙音軌連動) ---
     async function startMapTour() {
         if(isTouring) return;
         isTouring = true; triggerVibration('light');
-        
-        // 音樂淡入淡出切換
         if(!audio.paused) gsap.to(audio, { volume: 0, duration: 1, onComplete: () => audio.pause() });
         mapAudio.volume = 0; mapAudio.play().catch(()=>{}); gsap.to(mapAudio, { volume: 1, duration: 2 });
 
@@ -620,24 +756,22 @@
             map.flyTo([memoriesData[i][1], memoriesData[i][2]], 15, { duration: 2.5 });
             await new Promise(r => setTimeout(r, 2800)); 
             if (!isTouring) break;
-            mapMarkers[i].openPopup(); triggerVibration('light');
+            mapMarkers[i].openPopup(); triggerVibration('light'); viewedMemories.add(i);
             await new Promise(r => setTimeout(r, 4000)); 
-            mapMarkers[i].closePopup();
+            mapMarkers[i].closePopup(); checkMapCompletion();
         }
         isTouring = false; gsap.to(mapAudio, { volume: 0, duration: 2, onComplete: () => mapAudio.pause() });
     }
 
-    // --- 【皇家拍貼機 (Canvas 合成下載)】 ---
+    // --- 【升級版】皇家拍貼機 (Canvas 實體下載) ---
     let stream;
     async function openPhotobooth() {
         triggerVibration('light');
         document.getElementById('photobooth-modal').style.display = 'flex';
         try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: 1280, height: 720 } });
             document.getElementById('camera-video').srcObject = stream;
-        } catch(err) {
-            alert('無法存取相機，請允許瀏覽器權限！'); closePhotobooth();
-        }
+        } catch(err) { alert('無法存取相機，請允許瀏覽器權限！'); closePhotobooth(); }
     }
 
     function closePhotobooth() {
@@ -648,37 +782,41 @@
     function takePhotoAndDownload() {
         triggerVibration('success'); triggerConfetti();
         
-        // 閃光燈特效
+        // 閃白特效
         const flash = document.createElement('div');
-        flash.style.cssText = 'position:fixed;inset:0;background:white;z-index:9999;transition:opacity 0.5s;';
+        flash.style.cssText = 'position:fixed;inset:0;background:white;z-index:9999;transition:opacity 0.4s;';
         document.body.appendChild(flash);
-        setTimeout(() => { flash.style.opacity = '0'; setTimeout(()=>flash.remove(),500); }, 100);
+        setTimeout(() => { flash.style.opacity = '0'; setTimeout(()=>flash.remove(),400); }, 50);
 
-        // Canvas 合成影像
+        // Canvas 合成
         const video = document.getElementById('camera-video');
         const canvas = document.createElement('canvas');
         canvas.width = video.videoWidth; canvas.height = video.videoHeight;
         const ctx = canvas.getContext('2d');
 
-        // 鏡像繪製 Video
+        // 鏡像畫面
         ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        ctx.setTransform(1, 0, 0, 1, 0, 0); // 重置翻轉
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-        // 加上濾鏡文字與 Emoji
-        ctx.fillStyle = 'white'; ctx.textAlign = 'center'; ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 15;
-        ctx.font = 'bold 50px "Noto Serif TC"'; ctx.fillText('Mom, Happy Birthday', canvas.width / 2, 100);
-        ctx.font = 'bold 24px sans-serif'; ctx.fillText('2026.04.06', canvas.width / 2, 150);
-        ctx.font = '80px sans-serif'; ctx.fillText('🦉🐱', 100, canvas.height - 80);
-        ctx.fillText('✨', canvas.width - 80, canvas.height - 120);
+        // 繪製文字與裝飾
+        ctx.fillStyle = 'white'; ctx.textAlign = 'center'; 
+        ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 15;
+        
+        // 依照影片解析度調整字體大小 (基準 1280x720)
+        const scale = canvas.width / 720;
+        ctx.font = `bold ${60*scale}px "Noto Serif TC"`; ctx.fillText('Mom, Happy Birthday', canvas.width / 2, 120*scale);
+        ctx.font = `bold ${24*scale}px sans-serif`; ctx.fillText('2026.04.06', canvas.width / 2, 170*scale);
+        ctx.font = `${100*scale}px sans-serif`; ctx.fillText('🦉🐱', 120*scale, canvas.height - 100*scale);
+        ctx.fillText('✨', canvas.width - 100*scale, canvas.height - 150*scale);
 
-        // 觸發下載
+        // 觸發手機下載
         const link = document.createElement('a');
-        link.download = 'Mom_Birthday_2026.png';
-        link.href = canvas.toDataURL('image/png');
+        link.download = 'MOM_JUBILEE_2026.png';
+        link.href = canvas.toDataURL('image/png', 1.0);
         link.click();
         
-        showIsland('📸', '相片已儲存！');
+        showIsland('📸', '相片已儲存至手機！');
     }
   </script>
 </body>
