@@ -3,7 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>MOM'S JUBILEE | Spatial OS</title>
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MOM OS">
+  <link rel="apple-touch-icon" href="你的貓頭鷹圖片網址"> <title>MOM'S JUBILEE | Spatial OS</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;600;800&family=Noto+Sans+TC:wght@400;700&family=Noto+Serif+TC:wght@700&display=swap" rel="stylesheet">
@@ -15,12 +19,20 @@
 
   <style>
     :root { --glass-bg: rgba(255, 255, 255, 0.15); --glass-border: rgba(255, 255, 255, 0.2); }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans TC', sans-serif; background: #000; color: #fff; overflow: hidden; margin: 0; user-select: none; -webkit-touch-callout: none; }
+    
+    /* 【優化 3】阻擋下拉更新與回彈 (Overscroll/Rubber-banding) */
+    html, body { 
+        overscroll-behavior: none; 
+        font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans TC', sans-serif; 
+        background: #000; color: #fff; overflow: hidden; margin: 0; 
+        user-select: none; -webkit-touch-callout: none; 
+        width: 100%; height: 100%; position: fixed;
+    }
     
     .aurora-bg {
       position: fixed; top: -50%; left: -50%; width: 200%; height: 200%;
       background: radial-gradient(circle at 50% 50%, #4f46e5 0%, transparent 40%), radial-gradient(circle at 80% 20%, #f43f5e 0%, transparent 40%), radial-gradient(circle at 20% 80%, #0ea5e9 0%, transparent 40%);
-      filter: blur(80px) saturate(150%); animation: aurora 20s linear infinite alternate; z-index: -2; opacity: 0.6;
+      filter: blur(80px) saturate(150%); animation: aurora 20s linear infinite alternate; z-index: -2; opacity: 0.6; pointer-events: none;
     }
     @keyframes aurora { 0% { transform: rotate(0deg) scale(1); } 100% { transform: rotate(360deg) scale(1.2); } }
 
@@ -41,7 +53,13 @@
     .wallet-pass::after { content: ''; position: absolute; left: 24px; right: 24px; top: 50%; border-top: 2px dashed rgba(0,0,0,0.1); }
     
     ::-webkit-scrollbar { display: none; }
-    .view { position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: 0.6s cubic-bezier(0.4, 0, 0.2, 1); overflow-y: auto; padding-bottom: 120px; }
+    
+    .view { 
+        position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: 0.6s cubic-bezier(0.4, 0, 0.2, 1); 
+        overflow-y: auto; padding-bottom: 120px; 
+        -webkit-overflow-scrolling: touch; /* 保持內滾動平滑 */
+        overscroll-behavior-y: contain; /* 避免滾動穿透到 body */
+    }
     .view.active { opacity: 1; pointer-events: auto; transform: scale(1); }
     .view:not(.active) { transform: scale(0.95) translateY(20px); }
 
@@ -52,6 +70,14 @@
     .music-bar { width: 4px; background: white; border-radius: 2px; transition: height 0.1s; display: inline-block; margin: 0 2px; }
     #leaflet-map { width: 100%; height: calc(100vh - 180px); border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 10; border: 1px solid rgba(255,255,255,0.2); }
     .leaflet-popup-content-wrapper { border-radius: 16px; padding: 4px; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); }
+
+    /* 【優化 5】觸控光暈特效 */
+    .touch-ripple {
+      position: fixed; width: 80px; height: 80px;
+      background: radial-gradient(circle, rgba(129, 140, 248, 0.6) 0%, rgba(99, 102, 241, 0) 70%);
+      border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%) scale(0.5);
+      z-index: 9999; opacity: 1; mix-blend-mode: screen;
+    }
   </style>
 </head>
 <body>
@@ -78,9 +104,7 @@
             謝謝妳一直包容我，陪我準備報考北藝大，陪我去日本留下那麼多回憶。<br><br>
             接下來的日子，也請多多指教！生日快樂！
           </p>
-          <div class="text-right">
-              <p class="text-xs text-gray-500 font-bold italic">最愛妳的兒子 敬上</p>
-          </div>
+          <div class="text-right"><p class="text-xs text-gray-500 font-bold italic">最愛妳的兒子 敬上</p></div>
           <button onclick="closeSecretLetter()" class="mt-8 w-full py-3 bg-indigo-600 text-white rounded-full font-bold active:scale-95 transition-transform">收好信件</button>
       </div>
   </div>
@@ -181,10 +205,31 @@
     let audio = document.getElementById('bgm');
     let isGachaRunning = false, isRequesting = false, isTouring = false;
 
-    // --- 煙火全螢幕特效 ---
+    // --- 【優化 5】Spatial 觸控光暈特效 ---
+    document.addEventListener('pointerdown', (e) => {
+        const ripple = document.createElement('div');
+        ripple.className = 'touch-ripple';
+        ripple.style.left = e.clientX + 'px';
+        ripple.style.top = e.clientY + 'px';
+        document.body.appendChild(ripple);
+        gsap.to(ripple, { scale: 2, opacity: 0, duration: 0.6, ease: "power2.out", onComplete: () => ripple.remove() });
+    });
+
+    // --- 避免滾動事件穿透 ---
+    document.body.addEventListener('touchmove', function(e) {
+        if (!e.target.closest('.view')) { e.preventDefault(); }
+    }, { passive: false });
+
+    // --- 震動與灑花 ---
+    function triggerVibration(type) {
+        if (!navigator.vibrate) return;
+        if (type === 'light') navigator.vibrate(50); 
+        if (type === 'success') navigator.vibrate([100, 50, 100, 50, 200]); 
+        if (type === 'error') navigator.vibrate([50, 100, 50]); 
+    }
+    function triggerConfetti() { confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#6366F1', '#F43F5E', '#FBBF24'] }); }
     function triggerFireworks() {
-      var duration = 5 * 1000;
-      var end = Date.now() + duration;
+      var end = Date.now() + 5000;
       (function frame() {
         confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#6366F1', '#F43F5E'] });
         confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#FBBF24', '#34D399'] });
@@ -192,7 +237,7 @@
       }());
     }
 
-    // --- Widget 生日倒數邏輯 ---
+    // --- 生日倒數 ---
     function updateCountdown() {
         const now = new Date();
         const bday = new Date('2026-04-06T00:00:00');
@@ -200,16 +245,10 @@
 
         if (now > endBday) {
             document.getElementById('countdown-text').innerText = "生日任務已圓滿達成 ✨";
-            if(!sessionStorage.getItem('fireworks_done')) {
-                triggerFireworks();
-                sessionStorage.setItem('fireworks_done', 'true');
-            }
+            if(!sessionStorage.getItem('fireworks_done')) { triggerFireworks(); sessionStorage.setItem('fireworks_done', 'true'); }
         } else if (now >= bday && now <= endBday) {
             document.getElementById('countdown-text').innerText = "今天是妳的專屬節日 🎂";
-            if(!sessionStorage.getItem('bday_fireworks')) {
-                triggerFireworks();
-                sessionStorage.setItem('bday_fireworks', 'true');
-            }
+            if(!sessionStorage.getItem('bday_fireworks')) { triggerFireworks(); sessionStorage.setItem('bday_fireworks', 'true'); }
         } else {
             const diff = bday - now;
             const d = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -218,34 +257,28 @@
             document.getElementById('countdown-text').innerText = `距離生日還有 ${d}天 ${h}小時 ${m}分`;
         }
     }
-    setInterval(updateCountdown, 1000);
-    updateCountdown();
+    setInterval(updateCountdown, 1000); updateCountdown();
 
-    // --- Haptic Touch 長按解鎖密函 ---
+    // --- 長按解鎖密函 ---
     let pressTimer;
     const musicCard = document.getElementById('music-card');
-    
     function startPress(e) {
-        if(e.type === 'touchstart') e.preventDefault(); // 防止滾動干擾
-        gsap.to(musicCard, { scale: 0.95, duration: 0.2 }); // 視覺擠壓感
+        if(e.type === 'touchstart') e.preventDefault(); 
+        gsap.to(musicCard, { scale: 0.95, duration: 0.2 }); 
         pressTimer = setTimeout(() => {
-            if(navigator.vibrate) navigator.vibrate([100, 50, 100]); // 震動提示
+            if(navigator.vibrate) navigator.vibrate([100, 50, 100]); 
             document.getElementById('secret-letter-modal').style.display = 'flex';
             gsap.fromTo('#secret-letter-content', {y: 100, opacity: 0}, {y: 0, opacity: 1, duration: 0.8, ease: "back.out(1.2)"});
-            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); // 灑花慶祝
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); 
         }, 1500);
     }
-    
-    function cancelPress() {
-        clearTimeout(pressTimer);
-        gsap.to(musicCard, { scale: 1, duration: 0.2 });
-    }
+    function cancelPress() { clearTimeout(pressTimer); gsap.to(musicCard, { scale: 1, duration: 0.2 }); }
 
-    musicCard.addEventListener('touchstart', startPress);
-    musicCard.addEventListener('touchend', (e) => { cancelPress(); requestMotionPermission(); }); // 如果沒長按到1.5秒，就當作一般點擊觸發指揮
+    musicCard.addEventListener('touchstart', startPress, {passive: false});
+    musicCard.addEventListener('touchend', (e) => { cancelPress(); requestMotionPermission(); }); 
     musicCard.addEventListener('touchmove', cancelPress);
     musicCard.addEventListener('mousedown', startPress);
-    musicCard.addEventListener('mouseup', (e) => { cancelPress(); requestMotionPermission(); });
+    musicCard.addEventListener('mouseup', () => { cancelPress(); requestMotionPermission(); });
     musicCard.addEventListener('mouseleave', cancelPress);
 
     function closeSecretLetter() {
@@ -254,7 +287,7 @@
         }});
     }
 
-    // --- UI 輔助邏輯 ---
+    // --- UI 輔助 ---
     function initMagnetic() {
       document.querySelectorAll('.magnetic').forEach(btn => {
         btn.addEventListener('mousemove', (e) => {
@@ -266,38 +299,39 @@
     }
 
     function switchView(id, el) {
-      if(navigator.vibrate) navigator.vibrate(50);
+      triggerVibration('light');
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
       document.querySelectorAll('.dock-btn').forEach(b => b.classList.remove('active'));
       document.getElementById('view-' + id).classList.add('active');
       el.classList.add('active');
       
+      // 【優化 4】Apple 級別的音訊淡出
       if(id !== 'home') {
-          audio.pause();
-          document.querySelectorAll('.music-bar').forEach(b => b.style.height = '4px');
+          gsap.to(audio, { volume: 0, duration: 0.8, onComplete: () => {
+              audio.pause();
+              document.querySelectorAll('.music-bar').forEach(b => b.style.height = '4px');
+          }});
       }
       if(id === 'map') setTimeout(() => map.invalidateSize(), 300);
       else { isTouring = false; }
     }
 
+    // --- 初始化地圖 (【優化 2】暗黑沉浸式風格) ---
     function initMap() {
       map = L.map('leaflet-map', { zoomControl: false }).setView([35.0, 135.7], 5);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
     }
 
-    // --- 資料載入與 Face ID 防重複機制 ---
+    // --- 資料載入與 Face ID ---
     window.onload = async () => {
       initMap();
-      
       const hasUnlocked = sessionStorage.getItem('os_unlocked');
       const lockScreen = document.getElementById('lock-screen');
       
       if (!hasUnlocked) {
           lockScreen.classList.remove('hidden');
           setTimeout(() => document.getElementById('lock-sub').style.display = 'block', 1500);
-      } else {
-          document.getElementById('view-home').classList.add('active');
-      }
+      } else { document.getElementById('view-home').classList.add('active'); }
 
       try {
         const res = await fetch(`${GAS}?action=getData`);
@@ -345,7 +379,7 @@
                 lockText.style.color = '#34d399';
                 lockText.innerText = '身分確認：最尊貴的母后大人';
                 document.querySelector('.animate-scan').style.display = 'none';
-                if(navigator.vibrate) navigator.vibrate([100, 50, 100]); // 解鎖震動
+                triggerVibration('success');
                 
                 setTimeout(() => {
                     lockScreen.style.opacity = '0';
@@ -357,7 +391,7 @@
         }
       } catch (e) { 
         if (!hasUnlocked) {
-            document.getElementById('lock-text').innerText = '無網路連線 (強制登入)';
+            document.getElementById('lock-text').innerText = '離線登入成功';
             document.getElementById('view-home').classList.add('active');
             setTimeout(() => lockScreen.remove(), 1000);
         }
@@ -367,7 +401,7 @@
     // --- 管家 SOS ---
     async function sos(msg, btnEl) {
         if (isRequesting) return;
-        if(navigator.vibrate) navigator.vibrate(50);
+        triggerVibration('light');
         if (!confirm(`發送指令：「${msg}」？`)) return;
         
         isRequesting = true;
@@ -376,11 +410,10 @@
 
         try {
             await fetch(`${GAS}?action=redeem&id=SOS&msg=${encodeURIComponent(msg)}`);
-            btnEl.innerHTML = '✔️ 已傳達'; 
-            if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
+            btnEl.innerHTML = '✔️ 已傳達'; triggerVibration('success');
             setTimeout(() => { btnEl.innerHTML = originalText; btnEl.style.opacity = '1'; }, 2000);
         } catch(e) {
-            alert('傳送失敗'); if(navigator.vibrate) navigator.vibrate([50, 100, 50]);
+            alert('傳送失敗'); triggerVibration('error');
             btnEl.innerHTML = originalText; btnEl.style.opacity = '1';
         } finally { isRequesting = false; }
     }
@@ -388,8 +421,9 @@
     // --- 體感音樂 ---
     let lastX = 0, lastY = 0;
     function requestMotionPermission() {
-        if(pressTimer) return; // 如果是因為長按觸發的 mouseup，直接取消
-        if(navigator.vibrate) navigator.vibrate(50);
+        if(pressTimer) return;
+        triggerVibration('light');
+        audio.volume = 1; // 確保淡出後音量恢復
         audio.play().then(() => audio.pause()).catch(e => console.log("等待手動解鎖"));
         
         if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
@@ -406,7 +440,7 @@
             if(!acc) return;
             let delta = Math.abs(acc.x - lastX) + Math.abs(acc.y - lastY);
             if (delta > 8) { 
-                if (audio.paused) audio.play();
+                if (audio.paused) { audio.volume = 1; audio.play(); }
                 document.querySelectorAll('.music-bar').forEach(b => b.style.height = (Math.random()*24 + 4) + 'px');
             } else {
                 setTimeout(() => { 
@@ -417,11 +451,11 @@
         });
     }
 
-    // --- 金猴盲盒抽卡 ---
+    // --- 盲盒抽卡 ---
     async function startGacha() {
         if (isGachaRunning) return;
         isGachaRunning = true;
-        if(navigator.vibrate) navigator.vibrate(50);
+        triggerVibration('light');
 
         const overlay = document.getElementById('gacha-overlay');
         overlay.style.display = 'flex';
@@ -440,21 +474,19 @@
             gsap.to(["#gacha-result", "#gacha-sub"], { opacity: 1, y: -20, delay: 0.6, stagger: 0.2 });
             gsap.to("#close-gacha", { opacity: 1, delay: 1 });
             
-            setTimeout(() => { 
-                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } }); 
-                if(navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 200]); 
-            }, 800);
+            setTimeout(() => { triggerConfetti(); triggerVibration('success'); }, 800);
         } catch(e) {
             document.getElementById('gacha-result').innerText = "今日盲盒已空";
             gsap.to("#gacha-result", { opacity: 1, y: -20, delay: 0.6 });
             gsap.to("#close-gacha", { opacity: 1, delay: 1 });
+            triggerVibration('error');
         }
     }
 
     // --- 票券兌換 ---
     async function redeem(id, btnEl) {
       if (isRequesting) return;
-      if(navigator.vibrate) navigator.vibrate(50);
+      triggerVibration('light');
       if (!confirm('指紋驗證 (模擬)：確認使用票券？')) return;
       
       isRequesting = true;
@@ -469,15 +501,14 @@
           const res = await fetch(`${GAS}?action=redeem&id=${id}`);
           if(await res.text() === 'SUCCESS') {
             textEl.innerText = '✨ 兌換成功';
-            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); 
-            if(navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 200]);
+            triggerConfetti(); triggerVibration('success');
             gsap.to(pass, { y: -500, opacity: 0, duration: 0.8, ease: "power3.in", delay: 0.5, onComplete: () => location.reload() });
           } else {
-            alert("票券失效"); if(navigator.vibrate) navigator.vibrate([50, 100, 50]);
+            alert("票券失效"); triggerVibration('error');
             textEl.innerText = originalText; gsap.to(pass, { scale: 1, opacity: 1, duration: 0.3 });
           }
       } catch(e) {
-          alert('連線錯誤'); if(navigator.vibrate) navigator.vibrate([50, 100, 50]);
+          alert('連線錯誤'); triggerVibration('error');
           textEl.innerText = originalText; gsap.to(pass, { scale: 1, opacity: 1, duration: 0.3 });
       } finally { isRequesting = false; }
     }
@@ -486,11 +517,11 @@
     async function startMapTour() {
         if(isTouring) return;
         isTouring = true;
-        if(navigator.vibrate) navigator.vibrate(50);
-        
+        triggerVibration('light');
+        if (audio.paused) { audio.volume = 1; audio.play(); } 
+
         for (let i = 0; i < memoriesData.length; i++) {
             if (!isTouring) break; 
-            
             const m = memoriesData[i];
             const marker = mapMarkers[i];
             
@@ -499,12 +530,13 @@
             
             if (!isTouring) break;
             marker.openPopup();
-            if(navigator.vibrate) navigator.vibrate(50);
+            triggerVibration('light');
             
             await new Promise(r => setTimeout(r, 4000)); 
             marker.closePopup();
         }
         isTouring = false;
+        gsap.to(audio, { volume: 0, duration: 1, onComplete: () => audio.pause() });
     }
   </script>
 </body>
