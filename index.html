@@ -53,12 +53,6 @@
       background: var(--glass-bg); backdrop-filter: blur(25px) saturate(180%); -webkit-backdrop-filter: blur(25px) saturate(180%);
       border: 1px solid var(--glass-border); box-shadow: 0 20px 40px rgba(0,0,0,0.15); transform: translate3d(0,0,0);
     }
-    .spatial-glass::after {
-      content: ''; position: absolute; inset: -150%;
-      background: radial-gradient(circle at var(--glare-x, 50%) var(--glare-y, 50%), rgba(255,255,255,0.3) 0%, transparent 50%);
-      pointer-events: none; mix-blend-mode: overlay; z-index: 10;
-    }
-
     .text-glow { text-shadow: 0 4px 15px rgba(0,0,0,0.5); }
     .ssr-glow { text-shadow: 0 0 20px rgba(251, 191, 36, 1); color: #FBBF24; }
 
@@ -91,37 +85,34 @@
     
     .view { 
         position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
-        overflow-y: auto; 
-        -webkit-overflow-scrolling: touch; touch-action: pan-y;
-        /* 【修復 1】iOS PWA 安全區域防遮擋 (避開動態島/瀏海) */
-        padding-top: calc(env(safe-area-inset-top, 40px) + 20px);
-        padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 120px);
-        padding-left: 24px; padding-right: 24px;
+        overflow-y: auto; padding-bottom: 120px; -webkit-overflow-scrolling: touch; touch-action: pan-y;
+        padding-top: calc(env(safe-area-inset-top, 40px) + 20px); padding-left: 24px; padding-right: 24px;
     }
     .view.active { opacity: 1; pointer-events: auto; transform: scale(1); }
     .view.swipe-left { transform: translateX(-30px); }
     .view.swipe-right { transform: translateX(30px); }
     .view:not(.active):not(.swipe-left):not(.swipe-right) { transform: scale(0.95) translateY(20px); }
 
-    .dock { position: fixed; bottom: calc(env(safe-area-inset-bottom, 10px) + 20px); left: 50%; transform: translateX(-50%); display: flex; gap: 8px; padding: 12px; border-radius: 32px; z-index: 1000; }
+    .dock { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; padding: 12px; border-radius: 32px; z-index: 1000; }
     .dock-btn { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; transition: all 0.3s; color: rgba(255,255,255,0.6); }
     .dock-btn.active { background: rgba(255,255,255,0.2); color: #fff; transform: scale(1.1); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
-
     .music-bar { width: 4px; background: white; border-radius: 2px; transition: height 0.1s; display: inline-block; margin: 0 2px; }
-    
-    .leaflet-marker-icon { animation: markerDrop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
-    @keyframes markerDrop {
-        0% { transform: translateY(-200px) scaleY(1.5); opacity: 0; }
-        50% { transform: translateY(10px) scaleY(0.8); opacity: 1; }
-        100% { transform: translateY(0) scaleY(1); }
+
+    /* 【純 CSS 紅色大頭針】：保證永不破圖 */
+    .css-pin {
+        width: 30px; height: 30px; background: #e11d48; border: 3px solid white;
+        border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+        box-shadow: -3px 3px 10px rgba(0,0,0,0.5);
+        animation: markerDrop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
     }
+    .css-pin::after { content: ''; position: absolute; width: 8px; height: 8px; background: #fff; border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+    @keyframes markerDrop { 0% { transform: translateY(-100px) rotate(-45deg) scale(0); opacity: 0; } 100% { transform: translateY(0) rotate(-45deg) scale(1); opacity: 1; } }
 
-    #leaflet-map { width: 100%; height: calc(100vh - 220px); border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 10; border: 1px solid rgba(255,255,255,0.2); transform: translate3d(0,0,0); }
-    .leaflet-popup-content-wrapper { border-radius: 20px; padding: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.3); }
+    /* 【高階彈窗設計】：移除白邊，加入 Apple 模糊背板 */
+    #leaflet-map { width: 100%; height: calc(100vh - 200px); border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); z-index: 10; border: 1px solid rgba(255,255,255,0.2); transform: translate3d(0,0,0); }
+    .leaflet-popup-content-wrapper { border-radius: 20px; padding: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(15px); overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.3); }
     .leaflet-popup-content { margin: 0; width: 280px !important; }
-    .popup-img-container { width: 100%; height: 200px; background: #e5e7eb; display: flex; align-items: center; justify-content: center; }
-    .popup-img-container img { width: 100%; height: 100%; object-fit: contain; }
-
+    
     .photo-widget { position: relative; overflow: hidden; height: 160px; border-radius: 24px; }
     .photo-slide { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.5s ease-in-out; }
     .photo-slide.active { opacity: 1; }
@@ -146,9 +137,7 @@
         <div class="absolute inset-0 border-4 border-indigo-500 rounded-3xl opacity-30"></div>
         <div class="absolute inset-0 flex items-center justify-center text-indigo-400">
             <svg class="w-16 h-16 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
-                <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
-                <path d="M9 9h.01"></path><path d="M15 9h.01"></path><path d="M12 12v3"></path><path d="M8 16a4 4 0 0 0 8 0"></path>
+                <path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><path d="M9 9h.01"></path><path d="M15 9h.01"></path><path d="M12 12v3"></path><path d="M8 16a4 4 0 0 0 8 0"></path>
             </svg>
         </div>
         <div class="absolute top-0 left-0 w-full h-1 bg-indigo-400 shadow-[0_0_20px_#818cf8] animate-scan" id="scan-line"></div>
@@ -255,7 +244,7 @@
       </div>
       <div class="h-px w-full bg-white/10 my-4 relative z-10"></div>
       <div class="flex justify-between items-center relative z-10">
-          <p id="motion-status" class="text-xs font-bold tracking-widest text-orange-300 uppercase text-glow">長按解鎖密函 / 點擊指揮</p>
+          <p id="motion-status" class="text-xs font-bold tracking-widest text-orange-300 uppercase text-glow">長按解鎖密函 / 點擊揮動指揮</p>
           <p class="text-[10px] text-white/50 italic text-glow">Conducted by Your Son</p>
       </div>
     </div>
@@ -282,23 +271,23 @@
         </div>
       </div>
       <div class="grid grid-cols-2 gap-3 relative z-10">
-          <button onclick="sos('肚子餓了，求餵食', this)" class="sos-btn bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-all text-glow">🍱 肚子餓了</button>
-          <button onclick="sos('需要按摩支援', this)" class="sos-btn bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-all text-glow">💆‍♀️ 召喚按摩</button>
-          <button onclick="sos('想喝飲料，快去買', this)" class="sos-btn bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-all text-glow">🥤 想喝飲料</button>
-          <button onclick="sos('趕快出現在我面前', this)" class="sos-btn bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-all text-glow">👦 兒子來見我</button>
+          <button onclick="sos('肚子餓了，求餵食')" class="sos-btn bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-all text-glow">🍱 肚子餓了</button>
+          <button onclick="sos('需要按摩支援')" class="sos-btn bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-all text-glow">💆‍♀️ 召喚按摩</button>
+          <button onclick="sos('想喝飲料，快去買')" class="sos-btn bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-all text-glow">🥤 想喝飲料</button>
+          <button onclick="sos('趕快出現在我面前')" class="sos-btn bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-all text-glow">👦 兒子來見我</button>
       </div>
     </div>
   </main>
 
-  <main id="view-map" class="view relative">
+  <main id="view-map" class="view">
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-3xl font-black text-white drop-shadow-lg text-glow serif-font">千與千尋的足跡</h2>
-        <button onclick="startMapTour()" class="spatial-glass px-4 py-2 rounded-full text-xs font-bold tracking-widest uppercase flex items-center gap-2 active:scale-95 transition-transform text-glow">▶ 導覽</button>
+        <button onclick="startMapTour()" class="spatial-glass px-4 py-2 rounded-full text-xs font-bold tracking-widest uppercase flex items-center gap-2 active:scale-95 transition-transform text-glow">▶ 自動導覽</button>
     </div>
     <div id="leaflet-map" class="spatial-glass"></div>
   </main>
 
-  <main id="view-wallet" class="view relative">
+  <main id="view-wallet" class="view">
     <h2 class="text-3xl font-black mb-8 text-glow serif-font">皇家兌換票夾</h2>
     
     <div class="spatial-glass rounded-[32px] p-6 mb-8 magnetic">
@@ -328,7 +317,7 @@
     let audio = document.getElementById('bgm'), mapAudio = document.getElementById('map-bgm');
     let isGachaRunning = false, isRequesting = false, isTouring = false, hasUnlockedAudio = false;
 
-    // --- 全螢幕手勢切換 ---
+    // --- 全螢幕手勢切換 (Swipe) ---
     const tabs = ['home', 'map', 'wallet'];
     let currentTabIdx = 0, touchStartX = 0, touchStartY = 0;
 
@@ -341,6 +330,7 @@
         if(e.target.closest('#leaflet-map') || document.getElementById('photobooth-modal').style.display === 'flex') return;
         let deltaX = e.changedTouches[0].screenX - touchStartX;
         let deltaY = e.changedTouches[0].screenY - touchStartY;
+        
         if (Math.abs(deltaX) > 70 && Math.abs(deltaY) < 50) {
             if (deltaX < 0 && currentTabIdx < tabs.length - 1) switchTab(tabs[currentTabIdx + 1], 'left');
             else if (deltaX > 0 && currentTabIdx > 0) switchTab(tabs[currentTabIdx - 1], 'right');
@@ -375,7 +365,9 @@
     setInterval(() => {
         const slides = document.querySelectorAll('.photo-slide');
         let activeIdx = Array.from(slides).findIndex(s => s.classList.contains('active'));
-        slides[activeIdx].classList.remove('active'); activeIdx = (activeIdx + 1) % slides.length; slides[activeIdx].classList.add('active');
+        slides[activeIdx].classList.remove('active');
+        activeIdx = (activeIdx + 1) % slides.length;
+        slides[activeIdx].classList.add('active');
     }, 4000);
 
     function updateGreeting() {
@@ -389,7 +381,8 @@
     function showIsland(icon, text) {
         const di = document.getElementById('dynamic-island');
         document.getElementById('di-icon').innerText = icon; document.getElementById('di-text').innerText = text;
-        triggerVibration('success'); gsap.to(di, { top: 45, duration: 0.6, ease: "back.out(1.5)" });
+        triggerVibration('success');
+        gsap.to(di, { top: 45, duration: 0.6, ease: "back.out(1.5)" });
         setTimeout(() => gsap.to(di, { top: -100, duration: 0.5, ease: "power2.in" }), 3500);
     }
 
@@ -412,7 +405,8 @@
             document.getElementById('countdown-text').innerText = "今天是專屬節日 🎂";
             if(!sessionStorage.getItem('bday_fireworks')) { triggerFireworks(); sessionStorage.setItem('bday_fireworks', 'true'); }
         } else {
-            const diff = bday - now; const d = Math.floor(diff / (1000 * 60 * 60 * 24)); const h = Math.floor((diff / (1000 * 60 * 60)) % 24); const m = Math.floor((diff / 1000 / 60) % 60);
+            const diff = bday - now;
+            const d = Math.floor(diff / (1000 * 60 * 60 * 24)); const h = Math.floor((diff / (1000 * 60 * 60)) % 24); const m = Math.floor((diff / 1000 / 60) % 60);
             document.getElementById('countdown-text').innerText = `${d}天 ${h}時 ${m}分`;
         }
     }
@@ -461,7 +455,16 @@
 
     function closeSecretLetter() { gsap.to('#secret-letter-content', {y: 50, opacity: 0, duration: 0.4, onComplete: () => { document.getElementById('secret-letter-modal').style.display = 'none'; }}); }
 
-    // --- 【修復 2】替換 GitHub 防盜連的 Marker，確保地標正常顯示 ---
+    function initMagnetic() {
+      document.querySelectorAll('.magnetic').forEach(btn => {
+        btn.addEventListener('mousemove', (e) => {
+          const rect = btn.getBoundingClientRect();
+          gsap.to(btn, { x: (e.clientX - rect.left - rect.width/2)*0.1, y: (e.clientY - rect.top - rect.height/2)*0.1, duration: 0.4, ease: "power2.out" });
+        });
+        btn.addEventListener('mouseleave', () => gsap.to(btn, { x: 0, y: 0, duration: 0.7, ease: "elastic.out(1, 0.3)" }));
+      });
+    }
+
     function initMap() {
       map = L.map('leaflet-map', { zoomControl: false }).setView([35.0, 135.7], 5);
       L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
@@ -477,9 +480,9 @@
         }
     }
 
+    // --- Face ID 與 資料載入 (絕對防禦) ---
     window.onload = async () => {
       initMap();
-      
       const skipFaceId = sessionStorage.getItem('skip_face_id');
       const lockScreen = document.getElementById('lock-screen');
       
@@ -491,23 +494,37 @@
           lockScreen.style.display = 'flex';
       }
 
-      const fetchPromise = fetch(`${GAS}?action=getData`).then(res => res.json()).catch(err => null);
+      // 非同步抓取資料
+      const fetchPromise = fetch(`${GAS}?action=getData`).then(res => {
+          if (!res.ok) throw new Error('Net error'); return res.text();
+      }).then(text => {
+          if (text.startsWith('<')) throw new Error('CORS Error'); return JSON.parse(text);
+      }).catch(err => null);
 
       fetchPromise.then(data => {
           if(data) {
               memoriesData = data.memories || []; servicesData = data.services || [];
+
               memoriesData.forEach((m, i) => {
-                // 【完美修復】使用穩定 CDN，保證紅標不會破圖
-                const redIcon = new L.Icon({
-                    iconUrl: 'https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-2x-red.png',
-                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-                    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], className: 'marker-drop'
+                // 【完美修復 2】純 CSS 大頭針，絕不破圖
+                const redPin = L.divIcon({
+                    className: 'custom-pin',
+                    html: '<div class="css-pin"></div>',
+                    iconSize: [30, 30], iconAnchor: [15, 30], popupAnchor: [0, -32]
                 });
-                const marker = L.marker([m[1], m[2]], { icon: redIcon }).addTo(map);
+                const marker = L.marker([m[1], m[2]], { icon: redPin }).addTo(map);
+
+                // 【完美修復 1】Apple 級模糊背景不留白邊
                 marker.bindPopup(`
-                    <div style="color:#000; width:220px;">
-                        <div class="popup-img-container" style="margin-bottom:10px;"><img src="${m[4]}"></div>
-                        <div style="padding: 0 8px 8px 8px;"><b style="font-size:16px; display:block; margin-bottom:4px;">${m[0]}</b><p style="font-size:12px; color:#666; line-height:1.4; margin:0;">${m[3]}</p></div>
+                    <div style="width: 240px; margin: -4px;">
+                        <div style="position:relative; width:100%; height:240px; border-radius:16px 16px 0 0; overflow:hidden; background:#000;">
+                            <div style="position:absolute; inset:-20px; background-image:url('${m[4]}'); background-size:cover; background-position:center; filter:blur(15px); opacity:0.8; z-index:0;"></div>
+                            <img src="${m[4]}" style="position:relative; z-index:1; width:100%; height:100%; object-fit:contain;">
+                        </div>
+                        <div style="padding: 12px;">
+                            <b style="font-size:16px; display:block; margin-bottom:4px;">${m[0]}</b>
+                            <p style="font-size:12px; color:#555; line-height:1.5; margin:0;">${m[3]}</p>
+                        </div>
                     </div>
                 `);
                 marker.on('click', () => { viewedMemories.add(i); checkMapCompletion(); }); mapMarkers.push(marker);
@@ -528,6 +545,7 @@
                   </div>
                 </div>`).join('');
           }
+          initMagnetic();
       });
 
       if (!skipFaceId) {
@@ -535,7 +553,7 @@
               document.getElementById('lock-text').innerText = '身分確認：最尊貴的母后大人';
               document.getElementById('lock-text').style.color = '#34d399';
               document.getElementById('lock-text').classList.remove('animate-pulse');
-              const scanLine = document.getElementById('scan-line'); if(scanLine) scanLine.style.display = 'none';
+              document.getElementById('scan-line').style.display = 'none';
               triggerVibration('success');
               
               setTimeout(() => {
@@ -550,6 +568,7 @@
       }, { once: true });
     };
 
+    // --- 管家 SOS ---
     async function sos(msg) {
         if (isRequesting) return;
         triggerVibration('light');
@@ -569,6 +588,7 @@
         catch(e) { showIsland('❌', '傳送失敗'); } finally { isRequesting = false; }
     }
 
+    // --- 指揮家引擎 ---
     let targetRate = 0, currentRate = 0; let lastX = 0, lastY = 0;
     function requestMotionPermission() {
         if(pressTimer) return;
@@ -578,9 +598,9 @@
         const reqMotion = (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') ? DeviceMotionEvent.requestPermission() : Promise.resolve('granted');
         Promise.all([reqMotion]).then(states => {
             if (states.every(s => s === 'granted')) {
-                document.getElementById('motion-status').innerText = "指揮家模式：請揮動手機";
+                document.getElementById('motion-status').innerText = "指揮家模式啟動：請揮動手機";
                 startConductorEngine();
-            } else { alert("需允許動作感測喔！"); }
+            }
         }).catch(console.error);
     }
 
@@ -589,7 +609,7 @@
             let acc = e.accelerationIncludingGravity; if(!acc) return;
             let delta = Math.abs(acc.x - lastX) + Math.abs(acc.y - lastY);
             if (delta > 5) { 
-                targetRate = Math.min(1.6, 0.5 + (delta / 20)); 
+                targetRate = Math.min(1.5, 0.5 + (delta / 20)); 
                 if (audio.paused) { audio.volume = 1; audio.play(); }
                 document.querySelectorAll('.music-bar').forEach(b => b.style.height = (Math.random()*24 + 4) + 'px');
             }
