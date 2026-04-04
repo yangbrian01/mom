@@ -49,16 +49,14 @@
     }
     @keyframes aurora { 0% { transform: rotate(0deg) scale(1); } 100% { transform: rotate(360deg) scale(1.1); } }
 
-    /* 【修復】移除導致 Safari 破圖的 preserve-3d */
     .tilt-card {
         --rx: 0deg; --ry: 0deg; --scale: 1;
-        transform: perspective(1000px) rotateX(var(--rx)) rotateY(var(--ry)) scale(var(--scale));
+        transform: perspective(1000px) rotateX(var(--rx)) rotateY(var(--ry)) scale(var(--scale)) translate3d(0,0,0);
         transition: transform 0.1s ease-out, box-shadow 0.2s ease-out;
         will-change: transform;
     }
     .tilt-card:active { --scale: 0.96; }
 
-    /* 【修復】強迫 Safari 正確計算圓角裁切 */
     .spatial-glass {
       position: relative; overflow: hidden;
       background: var(--glass-bg); backdrop-filter: blur(25px) saturate(180%); -webkit-backdrop-filter: blur(25px) saturate(180%);
@@ -84,7 +82,7 @@
     .shine-effect { position: relative; overflow: hidden; }
     .shine-effect::before {
       content: ''; position: absolute; top: 0; left: -150%; width: 50%; height: 100%;
-      background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+      background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0) 100%);
       transform: skewX(-25deg); animation: shine 4s infinite; z-index: 10; pointer-events: none;
     }
     @keyframes shine { 0% { left: -150%; } 20% { left: 200%; } 100% { left: 200%; } }
@@ -118,17 +116,17 @@
 
     .music-bar { width: 4px; background: white; border-radius: 2px; transition: height 0.1s; display: inline-block; margin: 0 2px; }
     
-    .custom-pin-container { animation: markerDrop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
-    @keyframes markerDrop { 0% { transform: translateY(-200px) scale(0); opacity: 0; } 50% { transform: translateY(10px) scale(1); opacity: 1; } 100% { transform: translateY(0) scale(1); } }
+    /* 【終極修復 2】SVG 大頭針的掉落動畫 (使用原生 Image Tag，保證不消失) */
+    .marker-drop { animation: markerDrop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
+    @keyframes markerDrop { 0% { transform: translateY(-100px) scale(0); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
 
     #leaflet-map { width: 100%; height: calc(100vh - 180px); border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 10; border: 1px solid rgba(255,255,255,0.2); transform: translate3d(0,0,0); }
     .leaflet-popup-content-wrapper { border-radius: 20px !important; padding: 0 !important; background: rgba(255,255,255,0.95) !important; backdrop-filter: blur(10px) !important; overflow: hidden !important; box-shadow: 0 15px 35px rgba(0,0,0,0.3) !important; }
     .leaflet-popup-content { margin: 0 !important; width: 260px !important; max-width: 260px !important; line-height: normal !important; }
     .leaflet-container a.leaflet-popup-close-button { color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,0.8); top: 12px !important; right: 12px !important; z-index: 20; }
 
-    /* 【修復】照片 Widget 加回 Mask 防止照片溢出圓角 */
     .photo-widget { position: relative; overflow: hidden; height: 160px; border-radius: 24px; -webkit-mask-image: -webkit-radial-gradient(white, black); }
-    .photo-slide { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.5s ease-in-out; }
+    .photo-slide { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.5s ease-in-out; border-radius: 24px; }
     .photo-slide.active { opacity: 1; z-index: 1; }
 
     #photobooth-modal { position: fixed; inset: 0; background: #000; z-index: 5000; display: none; flex-direction: column; }
@@ -160,14 +158,7 @@
         <div class="absolute inset-0 border-4 border-indigo-500 rounded-3xl opacity-30"></div>
         <div class="absolute inset-0 flex items-center justify-center text-indigo-400">
             <svg class="w-16 h-16 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
-                <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
-                <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
-                <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
-                <path d="M9 10h.01"></path>
-                <path d="M15 10h.01"></path>
-                <path d="M12 12v2"></path>
-                <path d="M10 16a3 3 0 0 0 4 0"></path>
+                <path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><path d="M9 10h.01"></path><path d="M15 10h.01"></path><path d="M12 12v2"></path><path d="M10 16a3 3 0 0 0 4 0"></path>
             </svg>
         </div>
         <div class="absolute top-0 left-0 w-full h-1 bg-indigo-400 shadow-[0_0_20px_#818cf8] animate-scan" id="scan-line"></div>
@@ -190,7 +181,6 @@
   <div id="gacha-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-md z-[3000] hidden flex-col items-center justify-center text-center px-6">
     <div id="gacha-cube" class="w-32 h-32 rounded-3xl spatial-glass tilt-card flex items-center justify-center text-6xl shadow-[0_0_50px_rgba(251,191,36,0.5)] border border-yellow-400/50">🐒</div>
     <h2 id="gacha-result" class="text-3xl font-bold mt-10 text-white opacity-0 text-glow serif-font leading-relaxed"></h2>
-    
     <div id="gacha-actions" class="mt-12 flex gap-4 w-full max-w-xs opacity-0 hidden">
         <button onclick="keepGacha()" class="flex-1 py-3 spatial-glass rounded-full text-sm font-bold tracking-widest active:scale-95 transition-transform">先收進票夾</button>
         <button id="gacha-redeem-btn" class="flex-1 py-3 bg-indigo-500 text-white rounded-full text-sm font-bold tracking-widest shadow-lg shadow-indigo-500/40 active:scale-95 transition-transform">立即使用</button>
@@ -309,7 +299,7 @@
   <main id="view-map" class="view">
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-3xl font-black text-white drop-shadow-lg text-glow serif-font">千與千尋的足跡</h2>
-        <button onclick="startMapTour()" class="spatial-glass px-4 py-2 rounded-full text-xs font-bold tracking-widest uppercase flex items-center gap-2 active:scale-95 transition-transform text-glow">▶ 導覽</button>
+        <button onclick="startMapTour()" class="spatial-glass px-4 py-2 rounded-full text-xs font-bold tracking-widest uppercase flex items-center gap-2 active:scale-95 transition-transform text-glow">▶ 自動導覽</button>
     </div>
     <div id="leaflet-map" class="spatial-glass tilt-card"></div>
   </main>
@@ -339,13 +329,12 @@
   <audio id="map-bgm" src="你的千與千尋配樂網址" loop preload="auto"></audio>
 
   <script>
-    // 你的專屬 GAS 網址
     const GAS = 'https://script.google.com/macros/s/AKfycbxxknkKwWS-Vtqo3pKovAMstLtQrXeyD7DhnILzeeisIBCGHmh03zFjFAdmF47ZXtv_/exec'; 
     let map, mapMarkers = [], memoriesData = [], servicesData = []; 
     let audio = document.getElementById('bgm'), mapAudio = document.getElementById('map-bgm');
     let isGachaRunning = false, isRequesting = false, isTouring = false, hasUnlockedAudio = false;
 
-    // --- PWA 引導機制 ---
+    // --- PWA 引導 ---
     function checkPWA() {
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
         if (!isStandalone) {
@@ -415,7 +404,6 @@
         }, 4000);
     }
 
-    // --- 日夜問候 ---
     function updateGreeting() {
         const hr = new Date().getHours(); let greeting = "夜深了，皇家管家持續為您守衛。";
         if (hr >= 5 && hr < 12) greeting = "早安母后，準備好迎接美好的一天了嗎？";
@@ -521,9 +509,10 @@
         }
     }
 
-    // --- 資料載入 ---
+    // --- 資料載入與背景預先載圖 (Image Preloader) ---
     window.onload = async () => {
       initMap(); checkPWA();
+      const startTime = Date.now(); // 記錄開始載入時間
       
       const skipFaceId = sessionStorage.getItem('skip_face_id');
       const lockScreen = document.getElementById('lock-screen');
@@ -536,13 +525,38 @@
           lockScreen.style.display = 'flex';
       }
 
-      fetch(`${GAS}?action=getData`)
+      // 開始向後端抓資料
+      const fetchPromise = fetch(`${GAS}?action=getData`)
       .then(res => res.json())
-      .then(data => {
+      .catch(err => {
+          console.error("資料載入失敗:", err);
+          return null;
+      });
+
+      fetchPromise.then(async data => {
           if(data) {
               memoriesData = data.memories || []; servicesData = data.services || [];
               const widgetData = data.widgets || [];
 
+              // 【終極修復 1】照片預載入 (Preloader)
+              // 蒐集所有需要載入的圖片網址 (地圖照片 + Widget照片)
+              let imageUrls = [...memoriesData.map(m => m[4]), ...widgetData.map(w => w[0])].filter(Boolean);
+              
+              if (imageUrls.length > 0 && !skipFaceId) {
+                  document.getElementById('lock-text').innerText = 'Downloading Memories...';
+                  // 創造預載入的 Promise 陣列
+                  const preloadPromises = imageUrls.map(url => new Promise(resolve => {
+                      const img = new Image();
+                      img.onload = img.onerror = resolve; // 載完或報錯都放行，避免死鎖
+                      img.src = url;
+                  }));
+                  
+                  // Promise.race：最多等 3 秒，避免網路太慢卡死在掃描畫面
+                  const timeoutPromise = new Promise(r => setTimeout(r, 3000));
+                  await Promise.race([Promise.all(preloadPromises), timeoutPromise]);
+              }
+
+              // 渲染 Widget
               const widgetContainer = document.getElementById('widget-photo-container');
               if(widgetData.length > 0) {
                   let widgetHtml = '';
@@ -566,18 +580,24 @@
                   startWidgetSlideshow();
               }
 
+              // 渲染地圖
               memoriesData.forEach((m, i) => {
-                const redPin = L.divIcon({
-                    className: 'custom-pin-container',
-                    html: '<div style="width:28px; height:28px; background-color:#e11d48; border:3px solid white; border-radius:50% 50% 50% 0; transform:rotate(-45deg); box-shadow:-3px 3px 8px rgba(0,0,0,0.4); position:relative;"><div style="position:absolute; width:8px; height:8px; background:white; border-radius:50%; top:50%; left:50%; transform:translate(-50%, -50%);"></div></div>',
-                    iconSize: [28, 28], iconAnchor: [14, 28], popupAnchor: [0, -30]
+                // 【終極修復 2】SVG 大頭針 (絕不破圖、點擊不消失)
+                // 直接使用 Data URI 格式的 SVG 作為 iconUrl
+                const redPinSvg = `data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="30" height="45"><path fill="%23e11d48" stroke="%23ffffff" stroke-width="2" d="M12 2C6.48 2 2 6.48 2 12c0 7 10 21.5 10 21.5s10-14.5 10-21.5c0-5.52-4.48-10-10-10z"/><circle cx="12" cy="12" r="4" fill="%23ffffff"/></svg>`;
+                
+                const redPin = new L.Icon({
+                    iconUrl: redPinSvg,
+                    iconSize: [30, 45], iconAnchor: [15, 45], popupAnchor: [0, -35],
+                    className: 'marker-drop' // 套用掉落動畫
                 });
+                
                 const marker = L.marker([m[1], m[2]], { icon: redPin }).addTo(map);
                 
-                // 【完美修復】不再有白邊的彈窗
+                // 【完美修復 3】彈窗無白邊，底色換成優雅的深灰色 (#1f2937) 避免載入時死黑
                 marker.bindPopup(`
                     <div style="width:100%; display:flex; flex-direction:column; box-sizing:border-box;">
-                        <div style="position:relative; width:100%; height:200px; background:#000;">
+                        <div style="position:relative; width:100%; height:200px; background:#1f2937;">
                             <div style="position:absolute; inset:-20px; background-image:url('${m[4]}'); background-size:cover; background-position:center; filter:blur(15px); opacity:0.6; z-index:0;"></div>
                             <img src="${m[4]}" style="position:relative; z-index:1; width:100%; height:100%; object-fit:contain;">
                         </div>
@@ -605,27 +625,28 @@
                   </div>
                 </div>`).join('');
           }
-      })
-      .catch(err => {
-          console.error("資料載入失敗:", err);
-          showIsland('❌', '資料載入異常');
-      });
-
-      if (!skipFaceId) {
-          setTimeout(() => {
-              document.getElementById('lock-text').innerText = '身分確認：最尊貴的母后大人';
-              document.getElementById('lock-text').style.color = '#34d399';
-              document.getElementById('lock-text').classList.remove('animate-pulse');
-              document.getElementById('scan-line').style.display = 'none';
-              triggerVibration('success');
+          
+          // --- Face ID 強制停留邏輯 ---
+          // 計算剛剛預載圖和抓資料花了多少時間，確保 Face ID 至少顯示 4 秒鐘
+          if (!skipFaceId) {
+              const elapsed = Date.now() - startTime;
+              const remainingTime = Math.max(0, 4000 - elapsed);
               
               setTimeout(() => {
-                  lockScreen.style.opacity = '0';
-                  document.getElementById('view-home').classList.add('active');
-                  setTimeout(() => { lockScreen.style.display = 'none'; }, 1000);
-              }, 1000);
-          }, 3500); 
-      }
+                  document.getElementById('lock-text').innerText = '身分確認：最尊貴的母后大人';
+                  document.getElementById('lock-text').style.color = '#34d399';
+                  document.getElementById('lock-text').classList.remove('animate-pulse');
+                  document.getElementById('scan-line').style.display = 'none';
+                  triggerVibration('success');
+                  
+                  setTimeout(() => {
+                      lockScreen.style.opacity = '0';
+                      document.getElementById('view-home').classList.add('active');
+                      setTimeout(() => { lockScreen.style.display = 'none'; }, 1000);
+                  }, 1000);
+              }, remainingTime); 
+          }
+      }); // fetchPromise end
 
       document.addEventListener('pointerdown', () => {
           if(!hasUnlockedAudio) { audio.play().then(() => audio.pause()).catch(()=>{}); mapAudio.play().then(() => mapAudio.pause()).catch(()=>{}); hasUnlockedAudio = true; }
@@ -643,6 +664,7 @@
       }, { once: true });
     };
 
+    // --- 管家 SOS ---
     async function sos(msg) {
         if (isRequesting) return;
         triggerVibration('light');
@@ -662,6 +684,7 @@
         catch(e) { showIsland('❌', '傳送失敗'); } finally { isRequesting = false; }
     }
 
+    // --- 指揮家引擎 ---
     let targetRate = 0, currentRate = 0; let lastX = 0, lastY = 0;
     function requestMotionPermission() {
         if(pressTimer) return;
@@ -703,6 +726,7 @@
         updatePlayback();
     }
 
+    // --- 盲盒與兌換 ---
     function startGacha() {
         if (isGachaRunning) return;
         const available = servicesData.filter(s => s[4] > 0);
