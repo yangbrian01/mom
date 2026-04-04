@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="MOM OS">
-  <link rel="apple-touch-icon" href="你的貓頭鷹圖片網址"> <title>MOM'S JUBILEE | Spatial OS</title>
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3069/3069172.png"> <title>MOM'S JUBILEE | Spatial OS</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;600;800&family=Noto+Sans+TC:wght@400;700&family=Noto+Serif+TC:wght@700&display=swap" rel="stylesheet">
@@ -20,7 +20,6 @@
   <style>
     :root { --glass-bg: rgba(255, 255, 255, 0.15); --glass-border: rgba(255, 255, 255, 0.2); }
     
-    /* 【優化 3】阻擋下拉更新與回彈 (Overscroll/Rubber-banding) */
     html, body { 
         overscroll-behavior: none; 
         font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans TC', sans-serif; 
@@ -31,7 +30,9 @@
     
     .aurora-bg {
       position: fixed; top: -50%; left: -50%; width: 200%; height: 200%;
-      background: radial-gradient(circle at 50% 50%, #4f46e5 0%, transparent 40%), radial-gradient(circle at 80% 20%, #f43f5e 0%, transparent 40%), radial-gradient(circle at 20% 80%, #0ea5e9 0%, transparent 40%);
+      background: radial-gradient(circle at 50% 50%, #4f46e5 0%, transparent 40%),
+                  radial-gradient(circle at 80% 20%, #f43f5e 0%, transparent 40%),
+                  radial-gradient(circle at 20% 80%, #0ea5e9 0%, transparent 40%);
       filter: blur(80px) saturate(150%); animation: aurora 20s linear infinite alternate; z-index: -2; opacity: 0.6; pointer-events: none;
     }
     @keyframes aurora { 0% { transform: rotate(0deg) scale(1); } 100% { transform: rotate(360deg) scale(1.2); } }
@@ -42,23 +43,32 @@
     }
     .text-glow { text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
 
+    /* 【優化】Apple Card 等級流光掃過特效 */
+    .shine-effect { position: relative; overflow: hidden; }
+    .shine-effect::before {
+      content: ''; position: absolute; top: 0; left: -150%; width: 50%; height: 100%;
+      background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+      transform: skewX(-25deg); animation: shine 4s infinite; z-index: 10; pointer-events: none;
+    }
+    @keyframes shine { 0% { left: -150%; } 20% { left: 200%; } 100% { left: 200%; } }
+
     @keyframes scan { 0%, 100% { top: 0; opacity: 0; } 10%, 90% { opacity: 1; } 50% { top: 100%; } }
     .animate-scan { animation: scan 2s ease-in-out infinite; }
 
     .wallet-pass {
       position: relative; background: #fff; color: #000; border-radius: 20px; padding: 24px; margin-bottom: 24px;
       mask-image: radial-gradient(circle at 0px 50%, transparent 12px, black 13px), radial-gradient(circle at 100% 50%, transparent 12px, black 13px);
-      mask-size: 51% 100%, 51% 100%; mask-position: left, right; mask-repeat: no-repeat; transition: transform 0.4s;
+      mask-size: 51% 100%, 51% 100%; mask-position: left, right; mask-repeat: no-repeat; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
     .wallet-pass::after { content: ''; position: absolute; left: 24px; right: 24px; top: 50%; border-top: 2px dashed rgba(0,0,0,0.1); }
-    
+    .wallet-pass:active { transform: scale(0.95); }
+
     ::-webkit-scrollbar { display: none; }
     
     .view { 
         position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: 0.6s cubic-bezier(0.4, 0, 0.2, 1); 
         overflow-y: auto; padding-bottom: 120px; 
-        -webkit-overflow-scrolling: touch; /* 保持內滾動平滑 */
-        overscroll-behavior-y: contain; /* 避免滾動穿透到 body */
+        -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; 
     }
     .view.active { opacity: 1; pointer-events: auto; transform: scale(1); }
     .view:not(.active) { transform: scale(0.95) translateY(20px); }
@@ -71,7 +81,6 @@
     #leaflet-map { width: 100%; height: calc(100vh - 180px); border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 10; border: 1px solid rgba(255,255,255,0.2); }
     .leaflet-popup-content-wrapper { border-radius: 16px; padding: 4px; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); }
 
-    /* 【優化 5】觸控光暈特效 */
     .touch-ripple {
       position: fixed; width: 80px; height: 80px;
       background: radial-gradient(circle, rgba(129, 140, 248, 0.6) 0%, rgba(99, 102, 241, 0) 70%);
@@ -82,7 +91,7 @@
 </head>
 <body>
 
-  <div id="lock-screen" class="fixed inset-0 bg-black z-[9999] flex flex-col items-center justify-center transition-opacity duration-1000 hidden">
+  <div id="lock-screen" class="fixed inset-0 bg-black z-[9999] flex flex-col items-center justify-center transition-opacity duration-1000">
     <div class="relative w-24 h-24 mb-8">
         <div class="absolute inset-0 border-4 border-indigo-500 rounded-3xl opacity-30"></div>
         <div class="absolute inset-0 flex items-center justify-center text-5xl">👩‍👦</div>
@@ -133,8 +142,8 @@
       <h1 class="text-5xl font-bold tracking-tight text-glow" style="font-family: 'Noto Serif TC'">母后，生日快樂</h1>
     </header>
 
-    <div id="music-card" class="spatial-glass rounded-[32px] p-8 mb-6 magnetic cursor-pointer select-none">
-      <div class="flex items-center justify-between mb-4">
+    <div id="music-card" class="spatial-glass shine-effect rounded-[32px] p-8 mb-6 magnetic cursor-pointer select-none">
+      <div class="flex items-center justify-between mb-4 relative z-10">
         <div class="flex items-center gap-4">
             <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-orange-400 to-rose-400 flex items-center justify-center text-2xl shadow-[0_0_30px_rgba(251,146,60,0.4)]">🎶</div>
             <div>
@@ -146,9 +155,9 @@
             <div class="music-bar h-2"></div><div class="music-bar h-4"></div><div class="music-bar h-6"></div><div class="music-bar h-3"></div><div class="music-bar h-2"></div>
         </div>
       </div>
-      <div class="h-px w-full bg-white/10 my-4"></div>
-      <div class="flex justify-between items-center">
-          <p id="motion-status" class="text-xs font-bold tracking-widest text-orange-300 uppercase text-glow">長按解鎖密函 / 點擊揮動指揮</p>
+      <div class="h-px w-full bg-white/10 my-4 relative z-10"></div>
+      <div class="flex justify-between items-center relative z-10">
+          <p id="motion-status" class="text-xs font-bold tracking-widest text-orange-300 uppercase text-glow">長按解鎖密函 / 點擊指揮</p>
           <p class="text-[10px] text-white/50 italic text-glow">Conducted by Your Son</p>
       </div>
     </div>
@@ -205,7 +214,7 @@
     let audio = document.getElementById('bgm');
     let isGachaRunning = false, isRequesting = false, isTouring = false;
 
-    // --- 【優化 5】Spatial 觸控光暈特效 ---
+    // --- 觸控光暈特效 ---
     document.addEventListener('pointerdown', (e) => {
         const ripple = document.createElement('div');
         ripple.className = 'touch-ripple';
@@ -215,12 +224,11 @@
         gsap.to(ripple, { scale: 2, opacity: 0, duration: 0.6, ease: "power2.out", onComplete: () => ripple.remove() });
     });
 
-    // --- 避免滾動事件穿透 ---
+    // 避免滾動事件穿透
     document.body.addEventListener('touchmove', function(e) {
         if (!e.target.closest('.view')) { e.preventDefault(); }
     }, { passive: false });
 
-    // --- 震動與灑花 ---
     function triggerVibration(type) {
         if (!navigator.vibrate) return;
         if (type === 'light') navigator.vibrate(50); 
@@ -259,7 +267,7 @@
     }
     setInterval(updateCountdown, 1000); updateCountdown();
 
-    // --- 長按解鎖密函 ---
+    // --- 長按解鎖 ---
     let pressTimer;
     const musicCard = document.getElementById('music-card');
     function startPress(e) {
@@ -305,7 +313,6 @@
       document.getElementById('view-' + id).classList.add('active');
       el.classList.add('active');
       
-      // 【優化 4】Apple 級別的音訊淡出
       if(id !== 'home') {
           gsap.to(audio, { volume: 0, duration: 0.8, onComplete: () => {
               audio.pause();
@@ -316,22 +323,27 @@
       else { isTouring = false; }
     }
 
-    // --- 初始化地圖 (【優化 2】暗黑沉浸式風格) ---
+    // --- 【優化】初始化地圖 (換回 Voyager 亮色系) ---
     function initMap() {
       map = L.map('leaflet-map', { zoomControl: false }).setView([35.0, 135.7], 5);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
     }
 
-    // --- 資料載入與 Face ID ---
+    // --- Face ID 與 資料載入 ---
     window.onload = async () => {
       initMap();
+      
       const hasUnlocked = sessionStorage.getItem('os_unlocked');
       const lockScreen = document.getElementById('lock-screen');
       
+      // Face ID 防禦邏輯：沒解鎖過才給看動畫，解鎖過直接隱藏
       if (!hasUnlocked) {
-          lockScreen.classList.remove('hidden');
+          lockScreen.style.display = 'flex'; // 確保顯示
           setTimeout(() => document.getElementById('lock-sub').style.display = 'block', 1500);
-      } else { document.getElementById('view-home').classList.add('active'); }
+      } else { 
+          lockScreen.style.display = 'none'; // 直接消失
+          document.getElementById('view-home').classList.add('active'); 
+      }
 
       try {
         const res = await fetch(`${GAS}?action=getData`);
@@ -385,7 +397,7 @@
                     lockScreen.style.opacity = '0';
                     document.getElementById('view-home').classList.add('active');
                     sessionStorage.setItem('os_unlocked', 'true');
-                    setTimeout(() => lockScreen.remove(), 1000);
+                    setTimeout(() => { lockScreen.style.display = 'none'; }, 1000); // 確保徹底隱藏
                 }, 1500);
             }, 1000);
         }
@@ -393,7 +405,7 @@
         if (!hasUnlocked) {
             document.getElementById('lock-text').innerText = '離線登入成功';
             document.getElementById('view-home').classList.add('active');
-            setTimeout(() => lockScreen.remove(), 1000);
+            setTimeout(() => { lockScreen.style.display = 'none'; }, 1000);
         }
       }
     };
@@ -423,7 +435,7 @@
     function requestMotionPermission() {
         if(pressTimer) return;
         triggerVibration('light');
-        audio.volume = 1; // 確保淡出後音量恢復
+        audio.volume = 1; 
         audio.play().then(() => audio.pause()).catch(e => console.log("等待手動解鎖"));
         
         if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
