@@ -22,6 +22,7 @@
   <style>
     :root { --glass-bg: rgba(255, 255, 255, 0.12); --glass-border: rgba(255, 255, 255, 0.18); }
     
+    /* 【效能優化】強制 GPU 加速，改善卡頓 */
     html, body { 
         overscroll-behavior: none; 
         font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans TC', sans-serif; 
@@ -29,29 +30,25 @@
         user-select: none; -webkit-touch-callout: none; 
         width: 100%; height: 100%; position: fixed;
     }
-
-    /* 【字體優化】宣告皇家襯線體類別 */
     .serif-font { font-family: 'Noto Serif TC', serif; }
     
-    /* 動態視差極光背景 */
-    #parallax-bg { position: fixed; top: -10%; left: -10%; width: 120%; height: 120%; z-index: -2; pointer-events: none; transition: transform 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+    #parallax-bg { position: fixed; top: -10%; left: -10%; width: 120%; height: 120%; z-index: -2; pointer-events: none; transition: transform 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94); will-change: transform; }
     .aurora-bg {
-      position: absolute; inset: 0;
-      background: radial-gradient(circle at 50% 50%, rgba(79, 70, 229, 0.7) 0%, transparent 40%),
-                  radial-gradient(circle at 80% 20%, rgba(244, 63, 94, 0.7) 0%, transparent 40%),
-                  radial-gradient(circle at 20% 80%, rgba(14, 165, 233, 0.7) 0%, transparent 40%);
-      filter: blur(80px) saturate(150%); animation: aurora 25s linear infinite alternate;
+      position: absolute; inset: 0; transform: translate3d(0,0,0); /* GPU 加速 */
+      background: radial-gradient(circle at 50% 50%, rgba(79, 70, 229, 0.6) 0%, transparent 40%),
+                  radial-gradient(circle at 80% 20%, rgba(244, 63, 94, 0.6) 0%, transparent 40%),
+                  radial-gradient(circle at 20% 80%, rgba(14, 165, 233, 0.6) 0%, transparent 40%);
+      filter: blur(60px) saturate(150%); animation: aurora 25s linear infinite alternate; will-change: transform;
     }
     @keyframes aurora { 0% { transform: rotate(0deg) scale(1); } 100% { transform: rotate(360deg) scale(1.1); } }
 
     .spatial-glass {
-      background: var(--glass-bg); backdrop-filter: blur(40px) saturate(200%); -webkit-backdrop-filter: blur(40px) saturate(200%);
-      border: 1px solid var(--glass-border); box-shadow: 0 30px 60px rgba(0,0,0,0.12);
+      background: var(--glass-bg); backdrop-filter: blur(25px) saturate(180%); -webkit-backdrop-filter: blur(25px) saturate(180%);
+      border: 1px solid var(--glass-border); box-shadow: 0 20px 40px rgba(0,0,0,0.15); transform: translate3d(0,0,0);
     }
     .text-glow { text-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-    .ssr-glow { text-shadow: 0 0 20px rgba(251, 191, 36, 1); color: #FBBF24; } /* SSR 專屬金光 */
+    .ssr-glow { text-shadow: 0 0 20px rgba(251, 191, 36, 1); color: #FBBF24; }
 
-    /* 動態島 Dynamic Island */
     #dynamic-island {
         position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
         background: #000; color: #fff; padding: 12px 24px; border-radius: 40px;
@@ -65,7 +62,6 @@
       background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
       transform: skewX(-25deg); animation: shine 4s infinite; z-index: 10; pointer-events: none;
     }
-    @keyframes shine { 0% { left: -150%; } 20% { left: 200%; } 100% { left: 200%; } }
 
     @keyframes scan { 0%, 100% { top: 0; opacity: 0; } 10%, 90% { opacity: 1; } 50% { top: 100%; } }
     .animate-scan { animation: scan 2s ease-in-out infinite; }
@@ -73,7 +69,7 @@
     .wallet-pass {
       position: relative; background: #fff; color: #000; border-radius: 20px; padding: 24px; margin-bottom: 24px;
       mask-image: radial-gradient(circle at 0px 50%, transparent 12px, black 13px), radial-gradient(circle at 100% 50%, transparent 12px, black 13px);
-      mask-size: 51% 100%, 51% 100%; mask-position: left, right; mask-repeat: no-repeat; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      mask-size: 51% 100%, 51% 100%; mask-position: left, right; mask-repeat: no-repeat; transition: transform 0.4s; transform: translate3d(0,0,0);
     }
     .wallet-pass::after { content: ''; position: absolute; left: 24px; right: 24px; top: 50%; border-top: 2px dashed rgba(0,0,0,0.1); }
     .wallet-pass:active { transform: scale(0.95); }
@@ -81,7 +77,7 @@
     ::-webkit-scrollbar { display: none; }
     
     .view { 
-        position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: 0.6s cubic-bezier(0.4, 0, 0.2, 1); 
+        position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
         overflow-y: auto; padding-bottom: 120px; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; 
     }
     .view.active { opacity: 1; pointer-events: auto; transform: scale(1); }
@@ -93,10 +89,20 @@
 
     .music-bar { width: 4px; background: white; border-radius: 2px; transition: height 0.1s; display: inline-block; margin: 0 2px; }
     
-    #leaflet-map { width: 100%; height: calc(100vh - 180px); border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 10; border: 1px solid rgba(255,255,255,0.2); }
-    .leaflet-popup-content-wrapper { border-radius: 16px; padding: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); overflow: hidden; }
-    .popup-img-container { width: 100%; height: 160px; background: #f3f4f6; display: flex; align-items: center; justify-content: center; border-radius: 16px 16px 0 0; }
-    .popup-img-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    /* 【優化】地圖標記彈跳掉落動畫 */
+    .leaflet-marker-icon { animation: markerDrop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
+    @keyframes markerDrop {
+        0% { transform: translateY(-200px) scaleY(1.5); opacity: 0; }
+        50% { transform: translateY(10px) scaleY(0.8); opacity: 1; }
+        100% { transform: translateY(0) scaleY(1); }
+    }
+
+    /* 【優化】放大照片彈窗 */
+    #leaflet-map { width: 100%; height: calc(100vh - 180px); border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 10; border: 1px solid rgba(255,255,255,0.2); transform: translate3d(0,0,0); }
+    .leaflet-popup-content-wrapper { border-radius: 20px; padding: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.3); }
+    .leaflet-popup-content { margin: 0; width: 280px !important; } /* 加大寬度 */
+    .popup-img-container { width: 100%; height: 200px; background: #e5e7eb; display: flex; align-items: center; justify-content: center; } /* 加大高度 */
+    .popup-img-container img { width: 100%; height: 100%; object-fit: cover; } /* 確保填滿不變形 */
 
     .touch-ripple {
       position: fixed; width: 80px; height: 80px; background: radial-gradient(circle, rgba(129, 140, 248, 0.6) 0%, rgba(99, 102, 241, 0) 70%);
@@ -106,25 +112,17 @@
 </head>
 <body>
 
-  <div id="dynamic-island">
-      <span id="di-icon" class="text-xl">✅</span>
-      <span id="di-text" class="text-sm font-bold tracking-widest text-white"></span>
-  </div>
+  <div id="dynamic-island"><span id="di-icon" class="text-xl">✅</span><span id="di-text" class="text-sm font-bold tracking-widest text-white"></span></div>
 
   <div id="lock-screen" class="fixed inset-0 bg-black z-[9999] flex flex-col items-center justify-center transition-opacity duration-1000 hidden">
     <div class="relative w-28 h-28 mb-8">
         <div class="absolute inset-0 border-4 border-indigo-500 rounded-3xl opacity-30"></div>
         <div class="absolute inset-0 flex items-center justify-center text-indigo-400">
-            <svg class="w-16 h-16 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-               <path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
-               <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
-               <path d="M8 14s1.5 2 4 2 4-2 4-2"></path><path d="M9 9h.01"></path><path d="M15 9h.01"></path>
-            </svg>
+            <svg class="w-16 h-16 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><path d="M9 9h.01"></path><path d="M15 9h.01"></path></svg>
         </div>
         <div class="absolute top-0 left-0 w-full h-1 bg-indigo-400 shadow-[0_0_20px_#818cf8] animate-scan"></div>
     </div>
     <h2 id="lock-text" class="text-indigo-400 font-bold tracking-[0.3em] uppercase text-sm animate-pulse">Scanning Bio-Data...</h2>
-    <p id="lock-sub" class="mt-2 text-[10px] text-gray-500 tracking-widest hidden">存取皇家系統庫</p>
   </div>
 
   <div id="parallax-bg"><div class="aurora-bg"></div></div>
@@ -132,42 +130,46 @@
   <div id="secret-letter-modal" class="fixed inset-0 bg-black/80 backdrop-blur-xl z-[4000] hidden flex-col items-center justify-center px-6">
       <div id="secret-letter-content" class="bg-[#fdfbf7] text-[#333] p-8 rounded-3xl w-full max-w-md shadow-2xl relative">
           <div class="absolute -top-6 right-6 text-5xl opacity-20">🦉</div>
-          <h3 class="text-2xl font-black mb-4 serif-font">給最愛的媽媽：</h3>
-          <p class="text-sm leading-loose tracking-widest mb-6 font-medium text-gray-700">
-            驚喜嗎？這是我特別藏的秘密功能。<br><br>
-            寫這個系統比以前做訂餐系統還要花心思，因為這是專屬妳的 2026 生日禮物。<br>
-            謝謝妳一直包容我，陪我準備報考北藝大，陪我去日本留下那麼多回憶。<br><br>
-            接下來的日子，也請多多指教！生日快樂！
-          </p>
-          <div class="text-right"><p class="text-xs text-gray-500 font-bold italic">最愛妳的兒子 敬上</p></div>
-          <button onclick="closeSecretLetter()" class="mt-8 w-full py-3 bg-indigo-600 text-white rounded-full font-bold active:scale-95 transition-transform">收好信件</button>
+          <h3 class="text-2xl font-black mb-4 serif-font text-indigo-900">給最愛的媽媽：</h3>
+          <p id="secret-text-container" class="text-sm leading-loose tracking-widest mb-6 font-bold text-gray-700 min-h-[150px]"></p>
+          <div class="text-right opacity-0 transition-opacity duration-500" id="secret-sign"><p class="text-xs text-gray-500 font-bold italic">最愛妳的兒子 敬上</p></div>
+          <button onclick="closeSecretLetter()" class="mt-8 w-full py-3 bg-indigo-600 text-white rounded-full font-bold active:scale-95 transition-transform opacity-0" id="secret-close-btn">感動收下</button>
       </div>
   </div>
 
-  <div id="gacha-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-md z-[3000] hidden flex-col items-center justify-center text-center">
+  <div id="gacha-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-md z-[3000] hidden flex-col items-center justify-center text-center px-6">
     <div id="gacha-cube" class="w-32 h-32 rounded-3xl spatial-glass flex items-center justify-center text-6xl shadow-[0_0_50px_rgba(251,191,36,0.5)] border border-yellow-400/50">🐒</div>
-    <h2 id="gacha-result" class="text-3xl font-bold mt-10 text-white opacity-0 text-glow serif-font"></h2>
-    <p id="gacha-sub" class="text-sm text-white/60 mt-2 opacity-0">已發送通知，系統將自動處理</p>
-    <button class="mt-10 px-8 py-3 spatial-glass rounded-full opacity-0 text-sm tracking-widest uppercase active:scale-95 transition-transform" id="close-gacha" onclick="sessionStorage.setItem('skip_face_id', 'true'); location.reload()">收下禮物</button>
+    <h2 id="gacha-result" class="text-3xl font-bold mt-10 text-white opacity-0 text-glow serif-font leading-relaxed"></h2>
+    
+    <div id="gacha-actions" class="mt-12 flex gap-4 w-full max-w-xs opacity-0 hidden">
+        <button onclick="keepGacha()" class="flex-1 py-3 spatial-glass rounded-full text-sm font-bold tracking-widest active:scale-95 transition-transform">先收進票夾</button>
+        <button id="gacha-redeem-btn" class="flex-1 py-3 bg-indigo-500 text-white rounded-full text-sm font-bold tracking-widest shadow-lg shadow-indigo-500/40 active:scale-95 transition-transform">立即使用</button>
+    </div>
   </div>
 
   <div id="tour-complete-overlay" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[3000] hidden flex-col items-center justify-center text-center px-6">
       <div class="text-6xl mb-6 animate-bounce">✈️</div>
       <h2 class="text-3xl font-black text-white text-glow mb-2 serif-font">旅程回顧完成</h2>
-      <p class="text-sm text-white/70 tracking-widest leading-relaxed">我們一起走過的路，都是最珍貴的回憶。<br>未來還要一起去更多地方！</p>
-      <button onclick="document.getElementById('tour-complete-overlay').style.display='none'" class="mt-8 px-8 py-3 spatial-glass rounded-full text-sm font-bold uppercase tracking-widest active:scale-95 transition-transform">返回系統</button>
+      <p class="text-sm text-white/70 tracking-widest leading-relaxed mt-4">我們一起走過的路，都是最珍貴的回憶。<br>未來還要一起去更多地方！</p>
+      <button onclick="document.getElementById('tour-complete-overlay').style.display='none'" class="mt-10 px-8 py-3 spatial-glass rounded-full text-sm font-bold uppercase tracking-widest active:scale-95 transition-transform">返回系統</button>
   </div>
 
   <main id="view-home" class="view px-6 pt-12">
-    <div class="spatial-glass rounded-2xl px-4 py-3 mb-6 flex justify-between items-center shadow-lg">
+    <h3 id="dynamic-greeting" class="text-xs font-bold tracking-widest text-indigo-300 mb-2 text-glow uppercase"></h3>
+    
+    <header class="mb-8 animate__animated animate__fadeInDown">
+      <h1 class="text-6xl font-black tracking-tighter text-glow serif-font">母后，生日快樂</h1>
+    </header>
+
+    <div class="spatial-glass rounded-2xl px-4 py-3 mb-4 flex justify-between items-center shadow-lg">
         <div class="flex items-center gap-3">
             <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-sm shadow-md">🎂</div>
             <div>
-                <p class="text-[9px] text-white/70 font-bold uppercase tracking-widest">Countdown Event</p>
+                <p class="text-[9px] text-white/70 font-bold uppercase tracking-widest">Countdown</p>
                 <p id="countdown-text" class="text-sm font-bold text-glow">計算中...</p>
             </div>
         </div>
-        <div class="text-xs font-bold text-indigo-300">2026.04.06</div>
+        <div class="text-xs font-bold text-indigo-300">04.06</div>
     </div>
 
     <div class="spatial-glass rounded-2xl px-5 py-4 mb-8 flex items-center gap-4">
@@ -177,14 +179,9 @@
         </span>
         <div>
             <p class="text-[9px] text-white/50 font-bold uppercase tracking-widest">Live Status</p>
-            <p class="text-sm font-bold text-glow">兒子狀態：準備北藝大考試中 🎵</p>
+            <p class="text-sm font-bold text-glow">兒子狀態：準備備審資料中 📝</p>
         </div>
     </div>
-
-    <header class="mb-10 animate__animated animate__fadeInDown">
-      <h2 class="text-white/60 text-sm font-semibold tracking-widest uppercase mb-1 text-glow">MOM OS 2026</h2>
-      <h1 class="text-6xl font-black tracking-tighter text-glow serif-font">母后，生日快樂</h1>
-    </header>
 
     <div id="music-card" class="spatial-glass shine-effect rounded-[32px] p-8 mb-6 magnetic cursor-pointer select-none">
       <div class="flex items-center justify-between mb-4 relative z-10">
@@ -223,10 +220,10 @@
         </div>
       </div>
       <div class="grid grid-cols-2 gap-3 relative z-10">
-          <button onclick="sos('肚子餓了，求餵食', this)" class="sos-btn bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-all duration-300 text-glow">🍱 肚子餓了</button>
-          <button onclick="sos('需要按摩支援', this)" class="sos-btn bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-all duration-300 text-glow">💆‍♀️ 召喚按摩</button>
-          <button onclick="sos('想喝飲料，快去買', this)" class="sos-btn bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-all duration-300 text-glow">🥤 想喝飲料</button>
-          <button onclick="sos('趕快出現在我面前', this)" class="sos-btn bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-all duration-300 text-glow">👦 兒子來見我</button>
+          <button onclick="sos('肚子餓了，求餵食')" class="sos-btn bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-all text-glow">🍱 肚子餓了</button>
+          <button onclick="sos('需要按摩支援')" class="sos-btn bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-all text-glow">💆‍♀️ 召喚按摩</button>
+          <button onclick="sos('想喝飲料，快去買')" class="sos-btn bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-all text-glow">🥤 想喝飲料</button>
+          <button onclick="sos('趕快出現在我面前')" class="sos-btn bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-all text-glow">👦 兒子來見我</button>
       </div>
     </div>
   </main>
@@ -246,7 +243,7 @@
         <h3 class="font-bold text-xl text-glow mb-2 serif-font">✨ 皇家許願池</h3>
         <p class="text-xs text-white/60 mb-4">想要什麼特別的禮物？大聲說出來！</p>
         <div class="flex gap-2">
-            <input type="text" id="wish-input" class="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:border-indigo-400 transition-colors" placeholder="輸入妳的願望...">
+            <input type="text" id="wish-input" class="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:border-indigo-400 transition-colors" placeholder="輸入願望...">
             <button onclick="sendWish()" class="bg-indigo-500 text-white px-5 py-3 rounded-xl font-bold active:scale-95 transition-transform shadow-lg shadow-indigo-500/30">傳送</button>
         </div>
     </div>
@@ -261,32 +258,42 @@
   </nav>
 
   <audio id="bgm" src="你的音樂網址" loop preload="auto"></audio>
+  <audio id="map-bgm" src="你的千與千尋配樂網址" loop preload="auto"></audio>
 
   <script>
     const GAS = 'https://script.google.com/macros/s/AKfycbxxknkKwWS-Vtqo3pKovAMstLtQrXeyD7DhnILzeeisIBCGHmh03zFjFAdmF47ZXtv_/exec';
-    let map, mapMarkers = [], memoriesData = []; 
+    let map, mapMarkers = [], memoriesData = [], servicesData = []; 
     let audio = document.getElementById('bgm');
-    let isGachaRunning = false, isRequesting = false, isTouring = false;
-    let hasUnlockedAudio = false;
+    let mapAudio = document.getElementById('map-bgm');
+    let isGachaRunning = false, isRequesting = false, isTouring = false, hasUnlockedAudio = false;
+
+    // --- 日夜問候語 ---
+    function updateGreeting() {
+        const hr = new Date().getHours();
+        let greeting = "";
+        if (hr >= 5 && hr < 12) greeting = "早安母后，準備好迎接美好的一天了嗎？";
+        else if (hr >= 12 && hr < 18) greeting = "午後愉快，需要幫您泡杯茶嗎？";
+        else greeting = "夜深了，皇家管家持續為您守衛。";
+        document.getElementById('dynamic-greeting').innerText = greeting;
+    }
+    updateGreeting();
 
     // --- 視差效果 Parallax ---
     window.addEventListener('mousemove', (e) => {
         const x = (e.clientX / window.innerWidth - 0.5) * 20;
         const y = (e.clientY / window.innerHeight - 0.5) * 20;
-        document.getElementById('parallax-bg').style.transform = `translate(${x}px, ${y}px)`;
+        document.getElementById('parallax-bg').style.transform = `translate3d(${x}px, ${y}px, 0)`;
     });
-
-    // 【修復】動態視差的 iOS 陀螺儀綁定：等待權限解鎖後執行
     function enableGyroParallax() {
         window.addEventListener('deviceorientation', (e) => {
             if(!e.gamma || !e.beta) return;
             const x = (e.gamma / 90) * 30; 
             const y = ((e.beta - 45) / 90) * 30; 
-            document.getElementById('parallax-bg').style.transform = `translate(${x}px, ${y}px)`;
+            document.getElementById('parallax-bg').style.transform = `translate3d(${x}px, ${y}px, 0)`;
         });
     }
 
-    // --- 動態島 Dynamic Island ---
+    // --- 動態島 ---
     function showIsland(icon, text) {
         const di = document.getElementById('dynamic-island');
         document.getElementById('di-icon').innerText = icon;
@@ -296,19 +303,19 @@
         setTimeout(() => gsap.to(di, { top: -100, duration: 0.5, ease: "power2.in" }), 3500);
     }
 
-    // --- 觸控光暈特效 ---
+    // --- 觸控光暈 ---
     document.addEventListener('pointerdown', (e) => {
-        if(!hasUnlockedAudio) { audio.play().then(() => { audio.pause(); hasUnlockedAudio = true; }).catch(()=>{}); }
+        if(!hasUnlockedAudio) { 
+            audio.play().then(() => audio.pause()).catch(()=>{}); 
+            mapAudio.play().then(() => mapAudio.pause()).catch(()=>{}); 
+            hasUnlockedAudio = true; 
+        }
         const ripple = document.createElement('div');
         ripple.className = 'touch-ripple';
         ripple.style.left = e.clientX + 'px'; ripple.style.top = e.clientY + 'px';
         document.body.appendChild(ripple);
         gsap.to(ripple, { scale: 2, opacity: 0, duration: 0.6, ease: "power2.out", onComplete: () => ripple.remove() });
     });
-
-    document.body.addEventListener('touchmove', function(e) {
-        if (!e.target.closest('.view')) { e.preventDefault(); }
-    }, { passive: false });
 
     // --- 震動與灑花 ---
     function triggerVibration(type) {
@@ -317,7 +324,7 @@
         if (type === 'light') navigator.vibrate(50); 
         if (type === 'success') navigator.vibrate([100, 50, 100, 50, 200]); 
         if (type === 'error') navigator.vibrate([50, 100, 50]); 
-        if (type === 'ssr') navigator.vibrate([200, 100, 200, 100, 400]); // SSR 專屬強震
+        if (type === 'ssr') navigator.vibrate([200, 100, 200, 100, 400]); 
     }
     function triggerConfetti() { confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#6366F1', '#F43F5E', '#FBBF24'] }); }
     function triggerFireworks() {
@@ -336,24 +343,27 @@
         const endBday = new Date('2026-04-06T23:59:59');
 
         if (now > endBday) {
-            document.getElementById('countdown-text').innerText = "生日任務已圓滿達成 ✨";
+            document.getElementById('countdown-text').innerText = "任務圓滿達成 ✨";
             if(!sessionStorage.getItem('fireworks_done')) { triggerFireworks(); sessionStorage.setItem('fireworks_done', 'true'); }
         } else if (now >= bday && now <= endBday) {
-            document.getElementById('countdown-text').innerText = "今天是妳的專屬節日 🎂";
+            document.getElementById('countdown-text').innerText = "今天是專屬節日 🎂";
             if(!sessionStorage.getItem('bday_fireworks')) { triggerFireworks(); sessionStorage.setItem('bday_fireworks', 'true'); }
         } else {
             const diff = bday - now;
             const d = Math.floor(diff / (1000 * 60 * 60 * 24));
             const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
             const m = Math.floor((diff / 1000 / 60) % 60);
-            document.getElementById('countdown-text').innerText = `距離生日還有 ${d}天 ${h}小時 ${m}分`;
+            document.getElementById('countdown-text').innerText = `${d}天 ${h}時 ${m}分`;
         }
     }
     setInterval(updateCountdown, 1000); updateCountdown();
 
-    // --- 長按解鎖 ---
+    // --- 【優化】長按解鎖密函 (打字機特效) ---
     let pressTimer;
+    let isTyping = false;
     const musicCard = document.getElementById('music-card');
+    const secretContent = "驚喜嗎？這是我特別藏的秘密功能。\n\n寫這個系統比以前做訂餐系統還要花心思，因為這是專屬妳的 2026 生日禮物。\n謝謝妳一直包容我，陪我準備報考北藝大，陪我去日本留下那麼多回憶。\n\n接下來的日子，也請多多指教！生日快樂！";
+    
     function startPress(e) {
         if(e.type === 'touchstart') e.preventDefault(); 
         gsap.to(musicCard, { scale: 0.95, duration: 0.2 }); 
@@ -361,13 +371,33 @@
             triggerVibration('success');
             document.getElementById('secret-letter-modal').style.display = 'flex';
             gsap.fromTo('#secret-letter-content', {y: 100, opacity: 0}, {y: 0, opacity: 1, duration: 0.8, ease: "back.out(1.2)"});
-            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); 
+            
+            // 打字機邏輯
+            if(!isTyping) {
+                isTyping = true;
+                const container = document.getElementById('secret-text-container');
+                container.innerHTML = "";
+                let i = 0;
+                function typeWriter() {
+                    if (i < secretContent.length) {
+                        container.innerHTML += secretContent.charAt(i) === '\n' ? '<br>' : secretContent.charAt(i);
+                        if(secretContent.charAt(i) !== '\n') triggerVibration('tick');
+                        i++;
+                        setTimeout(typeWriter, 60); // 打字速度
+                    } else {
+                        gsap.to('#secret-sign', { opacity: 1, duration: 1 });
+                        gsap.to('#secret-close-btn', { opacity: 1, duration: 1, delay: 0.5 });
+                        triggerConfetti();
+                    }
+                }
+                setTimeout(typeWriter, 800); // 彈出後等一下再開始打字
+            }
         }, 1500);
     }
     function cancelPress() { clearTimeout(pressTimer); gsap.to(musicCard, { scale: 1, duration: 0.2 }); }
 
     musicCard.addEventListener('touchstart', startPress, {passive: false});
-    musicCard.addEventListener('touchend', (e) => { cancelPress(); requestMotionPermission(); }); 
+    musicCard.addEventListener('touchend', () => { cancelPress(); requestMotionPermission(); }); 
     musicCard.addEventListener('touchmove', cancelPress);
     musicCard.addEventListener('mousedown', startPress);
     musicCard.addEventListener('mouseup', () => { cancelPress(); requestMotionPermission(); });
@@ -383,7 +413,7 @@
       document.querySelectorAll('.magnetic').forEach(btn => {
         btn.addEventListener('mousemove', (e) => {
           const rect = btn.getBoundingClientRect();
-          gsap.to(btn, { x: (e.clientX - rect.left - rect.width/2)*0.1, y: (e.clientY - rect.top - rect.height/2)*0.1, duration: 0.4 });
+          gsap.to(btn, { x: (e.clientX - rect.left - rect.width/2)*0.1, y: (e.clientY - rect.top - rect.height/2)*0.1, duration: 0.4, ease: "power2.out" });
         });
         btn.addEventListener('mouseleave', () => gsap.to(btn, { x: 0, y: 0, duration: 0.7, ease: "elastic.out(1, 0.3)" }));
       });
@@ -396,6 +426,7 @@
       document.getElementById('view-' + id).classList.add('active');
       el.classList.add('active');
       
+      // 音樂淡出
       if(id !== 'home' && !audio.paused) {
           gsap.to(audio, { volume: 0, duration: 0.8, onComplete: () => {
               audio.pause();
@@ -403,7 +434,11 @@
           }});
       }
       if(id === 'map') setTimeout(() => map.invalidateSize(), 300);
-      else { isTouring = false; }
+      else { 
+          isTouring = false; 
+          // 離開地圖時，導覽音樂淡出
+          if(!mapAudio.paused) gsap.to(mapAudio, { volume: 0, duration: 1, onComplete: () => mapAudio.pause() });
+      }
     }
 
     function initMap() {
@@ -426,43 +461,40 @@
 
     window.onload = async () => {
       initMap();
-      // 在 PC 或 Android 上，直接啟動陀螺儀視差；iOS 需要等待後面點擊解鎖
       if(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission !== 'function') {
           enableGyroParallax();
       }
 
-      const skipFaceId = sessionStorage.getItem('skip_face_id');
       const lockScreen = document.getElementById('lock-screen');
-      
-      if (skipFaceId) {
+      if (!sessionStorage.getItem('skip_face_id')) {
+          lockScreen.style.display = 'flex';
+      } else {
           sessionStorage.removeItem('skip_face_id');
           lockScreen.style.display = 'none';
           document.getElementById('view-home').classList.add('active');
-      } else {
-          lockScreen.style.display = 'flex';
-          setTimeout(() => document.getElementById('lock-sub').style.display = 'block', 1500);
       }
 
       try {
         const res = await fetch(`${GAS}?action=getData`);
         const data = await res.json();
         memoriesData = data.memories;
+        servicesData = data.services; // 儲存供前端盲盒使用
 
         memoriesData.forEach((m, i) => {
           const redIcon = new L.Icon({
               iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
               shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-              iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
+              iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], className: 'marker-drop' // 加入掉落動畫
           });
           const marker = L.marker([m[1], m[2]], { icon: redIcon }).addTo(map);
           marker.bindPopup(`
-              <div style="color:#000; width:220px; font-family: sans-serif;">
-                  <div class="popup-img-container" style="margin-bottom:10px;">
+              <div style="color:#000; width:280px; font-family: sans-serif;">
+                  <div class="popup-img-container" style="margin-bottom:12px;">
                       <img src="${m[4]}">
                   </div>
-                  <div style="padding: 0 8px 8px 8px;">
-                      <b style="font-size:16px; display:block; margin-bottom:4px;">${m[0]}</b>
-                      <p style="font-size:12px; color:#666; line-height:1.4; margin:0;">${m[3]}</p>
+                  <div style="padding: 0 12px 12px 12px;">
+                      <b style="font-size:18px; display:block; margin-bottom:6px;">${m[0]}</b>
+                      <p style="font-size:14px; color:#555; line-height:1.5; margin:0;">${m[3]}</p>
                   </div>
               </div>
           `);
@@ -470,7 +502,7 @@
           mapMarkers.push(marker);
         });
 
-        document.getElementById('service-list').innerHTML = data.services.map(s => `
+        document.getElementById('service-list').innerHTML = servicesData.map(s => `
           <div class="wallet-pass" id="pass-${s[0]}">
             <div class="flex justify-between items-start mb-8">
               <div><p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Official Voucher</p><h4 class="font-black text-2xl">${s[1]}</h4></div>
@@ -487,26 +519,24 @@
 
         initMagnetic();
 
-        if (!skipFaceId) {
+        if (!sessionStorage.getItem('skip_face_id')) {
             setTimeout(() => {
                 const lockText = document.getElementById('lock-text');
                 lockText.classList.remove('animate-pulse');
                 lockText.style.color = '#34d399';
                 lockText.innerText = '身分確認：最尊貴的母后大人';
-                document.querySelector('.animate-scan').style.display = 'none';
                 triggerVibration('success');
-                
                 setTimeout(() => {
                     lockScreen.style.opacity = '0';
                     document.getElementById('view-home').classList.add('active');
                     sessionStorage.setItem('os_unlocked', 'true');
                     setTimeout(() => { lockScreen.style.display = 'none'; }, 1000); 
                 }, 1500);
-            }, 1000);
+            }, 1500);
         }
       } catch (e) { 
-        if (!skipFaceId) {
-            document.getElementById('lock-text').innerText = '離線登入成功';
+        if (!sessionStorage.getItem('skip_face_id')) {
+            document.getElementById('lock-text').innerText = '離線登入';
             document.getElementById('view-home').classList.add('active');
             setTimeout(() => { lockScreen.style.display = 'none'; }, 1000);
         }
@@ -514,7 +544,7 @@
     };
 
     // --- 管家 SOS ---
-    async function sos(msg, btnEl) {
+    async function sos(msg) {
         if (isRequesting) return;
         triggerVibration('light');
         if (!confirm(`發送指令：「${msg}」？`)) return;
@@ -526,16 +556,16 @@
 
         try {
             await fetch(`${GAS}?action=redeem&id=SOS&msg=${encodeURIComponent(msg)}`);
-            showIsland('✔️', '指令已送達兒子手機！');
+            showIsland('✔️', '已送達兒子手機！');
         } catch(e) {
-            showIsland('❌', '傳送失敗，請重試'); triggerVibration('error');
+            showIsland('❌', '傳送失敗'); triggerVibration('error');
         } finally { 
             isRequesting = false; 
             allBtns.forEach(b => { b.style.pointerEvents = 'auto'; b.style.opacity = '1'; });
         }
     }
 
-    // --- 皇家許願池 ---
+    // --- 許願池 ---
     async function sendWish() {
         const input = document.getElementById('wish-input');
         const wish = input.value.trim();
@@ -545,37 +575,27 @@
         isRequesting = true;
         showIsland('⏳', '願望發射中...');
         try {
-            await fetch(`${GAS}?action=redeem&id=SOS&msg=${encodeURIComponent("[許願池] " + wish)}`);
-            showIsland('✨', '願望已傳達！');
-            triggerConfetti();
-            input.value = '';
-        } catch(e) {
-            showIsland('❌', '傳送失敗');
-        } finally { isRequesting = false; }
+            await fetch(`${GAS}?action=redeem&id=SOS&msg=${encodeURIComponent("🌟 [皇家許願池] " + wish)}`);
+            showIsland('✨', '願望已傳達！'); triggerConfetti(); input.value = '';
+        } catch(e) { showIsland('❌', '傳送失敗'); } 
+        finally { isRequesting = false; }
     }
 
-    // --- 【優化】體感音樂 (包含 Motion 與 Orientation 雙重授權) ---
+    // --- 體感音樂 (包含陀螺儀視差解鎖) ---
+    let lastX = 0, lastY = 0;
     function requestMotionPermission() {
         if(pressTimer) return;
         triggerVibration('light');
         audio.volume = 1; 
-        audio.play().then(() => audio.pause()).catch(e => console.log("等待手動解鎖"));
+        audio.play().then(() => audio.pause()).catch(e => console.log("等待實體互動"));
         
-        // 請求加速度計 (揮動)
-        const reqMotion = (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') 
-            ? DeviceMotionEvent.requestPermission() : Promise.resolve('granted');
-        
-        // 請求陀螺儀 (視差背景)
-        const reqOrientation = (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') 
-            ? DeviceOrientationEvent.requestPermission() : Promise.resolve('granted');
+        const reqMotion = (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') ? DeviceMotionEvent.requestPermission() : Promise.resolve('granted');
+        const reqOrientation = (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') ? DeviceOrientationEvent.requestPermission() : Promise.resolve('granted');
 
         Promise.all([reqMotion, reqOrientation]).then(states => {
             if (states.every(s => s === 'granted')) {
-                startMotion();
-                enableGyroParallax(); // 同時啟動視差背景
-            } else {
-                alert("需要允許動作感測，才能解鎖完整的指揮體驗喔！");
-            }
+                startMotion(); enableGyroParallax();
+            } else { alert("需允許動作感測才能體驗完整功能喔！"); }
         }).catch(console.error);
     }
 
@@ -589,112 +609,128 @@
                 if (audio.paused) { audio.volume = 1; audio.play(); }
                 document.querySelectorAll('.music-bar').forEach(b => b.style.height = (Math.random()*24 + 4) + 'px');
             } else {
-                setTimeout(() => { 
-                    if(delta < 1) { audio.pause(); document.querySelectorAll('.music-bar').forEach(b => b.style.height = '4px'); } 
-                }, 1000);
+                setTimeout(() => { if(delta < 1) { audio.pause(); document.querySelectorAll('.music-bar').forEach(b => b.style.height = '4px'); } }, 1000);
             }
             lastX = acc.x; lastY = acc.y;
         });
     }
 
-    // --- 【優化】金猴盲盒抽卡 (隱藏老爸 SSR 機制) ---
-    async function startGacha() {
+    // --- 【優化】純前端運算盲盒 (不再卡頓，加入選擇機制與 SSR) ---
+    function startGacha() {
         if (isGachaRunning) return;
         isGachaRunning = true;
         triggerVibration('light');
 
+        // 過濾有庫存的項目
+        const available = servicesData.filter(s => s[4] > 0);
+        if(available.length === 0) {
+            alert('抱歉，今日盲盒庫存已空！');
+            isGachaRunning = false;
+            return;
+        }
+
         const overlay = document.getElementById('gacha-overlay');
         overlay.style.display = 'flex';
+        document.getElementById('gacha-actions').classList.add('hidden'); // 隱藏按鈕
         
+        // 齒輪震動
         let tickInterval = setInterval(() => triggerVibration('tick'), 100);
 
         const tl = gsap.timeline();
         tl.to("#gacha-cube", { rotation: 15, x: 10, duration: 0.1, repeat: 12, yoyo: true })
-          .to("#gacha-cube", { scale: 12, opacity: 0, duration: 0.6, ease: "expo.in", onComplete: () => clearInterval(tickInterval) });
+          .to("#gacha-cube", { scale: 12, opacity: 0, duration: 0.6, ease: "expo.in", onComplete: async () => {
+              clearInterval(tickInterval);
+              
+              // SSR 判定 (5%)
+              const isSSR = Math.random() < 0.05;
+              let resultItem = null;
 
-        // 【彩蛋】5% 機率觸發 SSR 召喚老馬代打
-        const isSSR = Math.random() < 0.05;
+              if (isSSR) {
+                  // 直接呼叫後端發 Line
+                  fetch(`${GAS}?action=redeem&id=SOS&msg=${encodeURIComponent("🐎 [SSR] 召喚老馬代打：爸爸去買宵夜")}`);
+                  document.getElementById('gacha-result').innerHTML = "✨ SSR 極稀有掉落 ✨<br><br>🐎 召喚老馬代打<br><span class='text-lg'>(爸爸去買宵夜)</span>";
+                  document.getElementById('gacha-result').classList.add('ssr-glow');
+                  
+                  document.getElementById('gacha-actions').innerHTML = `<button onclick="location.reload()" class="w-full py-3 bg-yellow-500 text-black rounded-full font-bold tracking-widest shadow-lg">驚喜收下</button>`;
+                  triggerVibration('ssr');
+              } else {
+                  // 正常抽卡 (純前端挑選)
+                  resultItem = available[Math.floor(Math.random() * available.length)];
+                  document.getElementById('gacha-result').innerText = "恭喜獲得：\n" + resultItem[1];
+                  document.getElementById('gacha-result').classList.remove('ssr-glow');
+                  
+                  // 綁定兌換按鈕
+                  const redeemBtn = document.getElementById('gacha-redeem-btn');
+                  redeemBtn.onclick = () => { redeem(resultItem[0], redeemBtn); };
+                  triggerVibration('success');
+              }
+              
+              document.getElementById('gacha-actions').classList.remove('hidden');
+              gsap.to(["#gacha-result", "#gacha-sub"], { opacity: 1, y: -20, duration: 0.6, stagger: 0.2 });
+              gsap.to("#gacha-actions", { opacity: 1, duration: 0.6, delay: 0.5 });
+              setTimeout(triggerConfetti, 200);
+          }});
+    }
 
-        try {
-            if (isSSR) {
-                // 直接透過 SOS API 發 Line 給你，不用動 Sheets 庫存
-                await fetch(`${GAS}?action=redeem&id=SOS&msg=${encodeURIComponent("🐎 [SSR] 召喚老馬代打：爸爸去買宵夜")}`);
-                
-                document.getElementById('gacha-result').innerHTML = "✨ SSR 極稀有掉落 ✨<br><br>🐎 召喚老馬代打<br><span class='text-lg'>(爸爸去買宵夜)</span>";
-                document.getElementById('gacha-result').classList.add('ssr-glow');
-            } else {
-                // 正常抽卡
-                const res = await fetch(`${GAS}?action=gacha`);
-                const text = await res.text();
-                if(text === "EMPTY") throw new Error("empty");
-                if(text === "BUSY") throw new Error("busy");
-                
-                const data = JSON.parse(text);
-                document.getElementById('gacha-result').innerText = "恭喜獲得：\n" + data.title;
-            }
-            
-            gsap.to(["#gacha-result", "#gacha-sub"], { opacity: 1, y: -20, delay: 0.6, stagger: 0.2 });
-            gsap.to("#close-gacha", { opacity: 1, delay: 1 });
-            
-            setTimeout(() => { 
-                triggerConfetti(); 
-                if(isSSR) triggerVibration('ssr'); 
-                else triggerVibration('success'); 
-            }, 800);
-        } catch(e) {
-            clearInterval(tickInterval);
-            if(e.message === "busy") document.getElementById('gacha-result').innerText = "系統忙碌中，請重試";
-            else document.getElementById('gacha-result').innerText = "今日盲盒已空";
-            
-            gsap.to("#gacha-result", { opacity: 1, y: -20, delay: 0.6 });
-            gsap.to("#close-gacha", { opacity: 1, delay: 1 });
-            triggerVibration('error');
-        }
+    function keepGacha() {
+        // 收進票夾 (不做任何事，直接重整畫面)
+        sessionStorage.setItem('skip_face_id', 'true');
+        location.reload();
     }
 
     // --- 票券兌換 ---
     async function redeem(id, btnEl) {
       if (isRequesting) return;
       triggerVibration('light');
-      if (!confirm('指紋驗證 (模擬)：確認使用票券？')) return;
+      // 如果不是在盲盒畫面內，才跳出 Alert 詢問
+      if(!btnEl.id.includes('gacha')) {
+          if (!confirm('指紋驗證 (模擬)：確認使用票券？')) return;
+          const pass = document.getElementById('pass-'+id);
+          gsap.to(pass, { scale: 0.95, opacity: 0.8, duration: 0.3 });
+      }
       
       isRequesting = true;
-      const textEl = btnEl.querySelector('.btn-text');
-      const originalText = textEl.innerText;
-      textEl.innerText = '⏳ 處理中...';
-      
-      const pass = document.getElementById('pass-'+id);
-      gsap.to(pass, { scale: 0.95, opacity: 0.8, duration: 0.3 });
+      const originalText = btnEl.innerText;
+      btnEl.innerText = '⏳ 處理中...';
       
       try {
           const res = await fetch(`${GAS}?action=redeem&id=${id}`);
           const resultText = await res.text();
           if(resultText === 'SUCCESS') {
-            textEl.innerText = '✨ 兌換成功';
+            btnEl.innerText = '✨ 兌換成功';
             triggerConfetti(); triggerVibration('success');
-            gsap.to(pass, { y: -500, opacity: 0, duration: 0.8, ease: "power3.in", delay: 0.5, onComplete: () => {
-                sessionStorage.setItem('skip_face_id', 'true');
-                location.reload();
-            }});
+            
+            if(btnEl.id.includes('gacha')) {
+                setTimeout(() => { sessionStorage.setItem('skip_face_id', 'true'); location.reload(); }, 2000);
+            } else {
+                gsap.to(document.getElementById('pass-'+id), { y: -500, opacity: 0, duration: 0.8, ease: "power3.in", delay: 0.5, onComplete: () => {
+                    sessionStorage.setItem('skip_face_id', 'true'); location.reload();
+                }});
+            }
           } else if(resultText === 'BUSY') {
             alert("系統忙碌中，請稍後！"); triggerVibration('error');
-            textEl.innerText = originalText; gsap.to(pass, { scale: 1, opacity: 1, duration: 0.3 });
+            btnEl.innerText = originalText;
           } else {
-            alert("票券失效"); triggerVibration('error');
-            textEl.innerText = originalText; gsap.to(pass, { scale: 1, opacity: 1, duration: 0.3 });
+            alert("票券失效或次數不足"); triggerVibration('error');
+            btnEl.innerText = originalText;
           }
       } catch(e) {
           alert('連線超時'); triggerVibration('error');
-          textEl.innerText = originalText; gsap.to(pass, { scale: 1, opacity: 1, duration: 0.3 });
+          btnEl.innerText = originalText;
       } finally { isRequesting = false; }
     }
 
-    // --- 地圖自動導覽 ---
+    // --- 【優化】地圖自動導覽 (BGM 淡入連動) ---
     async function startMapTour() {
         if(isTouring) return;
         isTouring = true;
         triggerVibration('light');
-        if (audio.paused) { audio.volume = 1; audio.play(); } 
+        
+        // 停止主音樂，淡入地圖音樂
+        if(!audio.paused) gsap.to(audio, { volume: 0, duration: 1, onComplete: () => audio.pause() });
+        mapAudio.volume = 0;
+        mapAudio.play().catch(()=>{});
+        gsap.to(mapAudio, { volume: 1, duration: 2 });
 
         for (let i = 0; i < memoriesData.length; i++) {
             if (!isTouring) break; 
@@ -713,8 +749,10 @@
             marker.closePopup();
             checkMapCompletion();
         }
+        
         isTouring = false;
-        gsap.to(audio, { volume: 0, duration: 1, onComplete: () => audio.pause() });
+        // 導覽結束，音樂淡出
+        gsap.to(mapAudio, { volume: 0, duration: 2, onComplete: () => mapAudio.pause() });
     }
   </script>
 </body>
