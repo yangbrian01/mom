@@ -43,7 +43,7 @@
     .aurora-spirited {
       position: absolute; inset: 0; transform: translate3d(0,0,0); opacity: 0;
       background: radial-gradient(circle at 50% 50%, rgba(153, 27, 27, 0.8) 0%, transparent 40%),
-                  radial-gradient(circle at 80% 20%, rgba(251, 191, 36, 0.6) 0%, transparent 40%),
+                  radial-gradient(circle at 80% 20%, rgba(244, 63, 94, 0.6) 0%, transparent 40%),
                   radial-gradient(circle at 20% 80%, rgba(190, 18, 60, 0.7) 0%, transparent 40%);
       filter: blur(60px) saturate(150%); animation: aurora 25s linear infinite alternate-reverse; transition: opacity 1.5s ease-in-out;
     }
@@ -116,25 +116,44 @@
 
     .music-bar { width: 4px; background: white; border-radius: 2px; transition: height 0.1s; display: inline-block; margin: 0 2px; }
     
-    /* ---------------------------------------------------- */
-    /* 【終極修復：地圖彈出視窗 0 白邊 + 叉叉優化】 */
-    /* ---------------------------------------------------- */
-    .leaflet-marker-icon { animation: markerDrop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
-    @keyframes markerDrop { 0% { transform: translateY(-200px) scaleY(1.5); opacity: 0; } 50% { transform: translateY(10px) scaleY(0.8); opacity: 1; } 100% { transform: translateY(0) scaleY(1); } }
-
-    #leaflet-map { width: 100%; height: calc(100vh - 180px); border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 10; border: 1px solid rgba(255,255,255,0.2); transform: translate3d(0,0,0); }
+    /* ======================================================= */
+    /* 【修復 1】地標座標正確版掉落動畫 */
+    /* 我們現在只做內部元素的動畫，不影響 Leaflet 的座標計算 */
+    /* ======================================================= */
+    .custom-pin {
+        width: 28px; height: 28px; background-color: #e11d48; border: 3px solid white;
+        border-radius: 50% 50% 50% 0; transform: rotate(-45deg); position: relative;
+        box-shadow: -3px 3px 8px rgba(0,0,0,0.4);
+        animation: markerDrop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+    }
+    .custom-pin::after {
+        content: ''; position: absolute; width: 8px; height: 8px; background: white;
+        border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    }
+    @keyframes markerDrop { 
+        0% { transform: translateY(-100px) rotate(-45deg) scale(0); opacity: 0; } 
+        100% { transform: translateY(0) rotate(-45deg) scale(1); opacity: 1; } 
+    }
     
-    /* 暴力移除 Leaflet 預設 padding 與 margin */
+    /* 暴力移除 Leaflet 彈窗白邊 */
+    #leaflet-map { width: 100%; height: calc(100vh - 180px); border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 10; border: 1px solid rgba(255,255,255,0.2); transform: translate3d(0,0,0); }
     .leaflet-popup-content-wrapper { border-radius: 20px !important; padding: 0 !important; background: rgba(255,255,255,0.95) !important; backdrop-filter: blur(10px) !important; overflow: hidden !important; box-shadow: 0 15px 35px rgba(0,0,0,0.3) !important; }
     .leaflet-popup-content { margin: 0 !important; width: 260px !important; max-width: 260px !important; line-height: normal !important; }
-    
-    /* 修改叉叉 (Close Button) 顏色，讓它在深色照片上看得清楚 */
     .leaflet-container a.leaflet-popup-close-button { color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,0.8); top: 12px !important; right: 12px !important; z-index: 20; }
-    /* ---------------------------------------------------- */
 
-    /* Widget 相簿 */
-    .photo-widget { position: relative; overflow: hidden; height: 160px; border-radius: 24px; }
-    .photo-slide { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.5s ease-in-out; }
+    /* ======================================================= */
+    /* 【修復 2】Widget 照片超框圓角問題 (Apple Safari Bug Fix) */
+    /* ======================================================= */
+    .photo-widget { 
+        position: relative; overflow: hidden; height: 160px; border-radius: 24px; 
+        transform: translateZ(0); /* 強制開啟 Safari GPU 裁切邊緣 */
+        -webkit-mask-image: -webkit-radial-gradient(white, black); /* Safari 終極圓角防漏遮罩 */
+    }
+    .photo-slide { 
+        position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; 
+        opacity: 0; transition: opacity 1.5s ease-in-out; 
+        border-radius: 24px; /* 強制照片本身也有圓角 */
+    }
     .photo-slide.active { opacity: 1; z-index: 1; }
 
     #photobooth-modal { position: fixed; inset: 0; background: #000; z-index: 5000; display: none; flex-direction: column; }
@@ -345,13 +364,11 @@
   <audio id="map-bgm" src="你的千與千尋配樂網址" loop preload="auto"></audio>
 
   <script>
-    // 【重要】：請務必確認這是你已經更新好的 GAS 網址
     const GAS = 'https://script.google.com/macros/s/AKfycbxxknkKwWS-Vtqo3pKovAMstLtQrXeyD7DhnILzeeisIBCGHmh03zFjFAdmF47ZXtv_/exec'; 
     let map, mapMarkers = [], memoriesData = [], servicesData = []; 
     let audio = document.getElementById('bgm'), mapAudio = document.getElementById('map-bgm');
     let isGachaRunning = false, isRequesting = false, isTouring = false, hasUnlockedAudio = false;
 
-    // --- PWA 引導 ---
     function checkPWA() {
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
         if (!isStandalone) {
@@ -362,7 +379,6 @@
         }
     }
 
-    // --- 全螢幕手勢切換 ---
     const tabs = ['home', 'map', 'wallet'];
     let currentTabIdx = 0, touchStartX = 0, touchStartY = 0;
 
@@ -406,7 +422,7 @@
         if(id !== 'map' && !mapAudio.paused) gsap.to(mapAudio, { volume: 0, duration: 1, onComplete: () => mapAudio.pause() });
     }
 
-    // --- Widget 照片輪播邏輯 ---
+    // 照片輪播啟動器
     function startWidgetSlideshow() {
         setInterval(() => {
             const slides = document.querySelectorAll('.photo-slide');
@@ -471,7 +487,6 @@
       }());
     }
 
-    // --- 長按解鎖密函 ---
     let pressTimer; let isTyping = false;
     const musicCard = document.getElementById('music-card');
     const secretContent = "驚喜嗎？這是我特別藏的秘密功能。\n\n寫這個系統比以前做訂餐系統還要花心思，因為這是專屬妳的 2026 生日禮物。\n謝謝妳一直包容我，陪我準備報考北藝大，陪我去日本留下那麼多回憶。\n\n接下來的日子，也請多多指教！生日快樂！";
@@ -526,7 +541,7 @@
         }
     }
 
-    // --- Face ID 與 資料載入 ---
+    // --- 資料載入主程式 ---
     window.onload = async () => {
       initMap(); checkPWA();
       
@@ -548,12 +563,11 @@
               memoriesData = data.memories || []; servicesData = data.services || [];
               const widgetData = data.widgets || [];
 
-              // 讀取新的 Widget 工作表，動態生成輪播 HTML
+              // --- 讀取 Widget 照片資料 (需更新後端 Code.gs) ---
               const widgetContainer = document.getElementById('widget-photo-container');
               if(widgetData.length > 0) {
                   let widgetHtml = '';
                   widgetData.forEach((w, idx) => {
-                      // w[0] 是照片網址，w[1] 是日期文字
                       widgetHtml += `<img src="${w[0]}" class="photo-slide ${idx === 0 ? 'active' : ''}" data-label="${w[1]}">`;
                   });
                   widgetHtml += `<div class="absolute bottom-2 right-3 bg-black/40 backdrop-blur-sm px-2 py-1 rounded-full z-10">
@@ -562,21 +576,28 @@
                   widgetContainer.innerHTML = widgetHtml;
                   startWidgetSlideshow();
               } else {
-                  widgetContainer.innerHTML = '<div class="absolute inset-0 flex items-center justify-center text-white/50 text-xs">請在試算表 Widget 加入資料</div>';
+                  // 如果試算表還沒建好 Widget 資料，先用預設的墊檔
+                  widgetContainer.innerHTML = `
+                    <img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=400&auto=format&fit=crop" class="photo-slide active" data-label="2026.02 Japan">
+                    <img src="https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?q=80&w=400&auto=format&fit=crop" class="photo-slide" data-label="2026.02 Japan">
+                    <img src="https://images.unsplash.com/photo-1480796927426-f609979314bd?q=80&w=400&auto=format&fit=crop" class="photo-slide" data-label="2026.02 Japan">
+                    <div class="absolute bottom-2 right-3 bg-black/40 backdrop-blur-sm px-2 py-1 rounded-full z-10">
+                        <span class="text-[8px] font-bold tracking-widest text-white uppercase" id="widget-photo-label">2026.02 Japan</span>
+                    </div>
+                  `;
+                  startWidgetSlideshow();
               }
 
+              // --- 渲染地圖地標 ---
               memoriesData.forEach((m, i) => {
-                // 純 CSS 繪製大頭針，永不破圖
                 const redPin = L.divIcon({
-                    className: 'custom-pin-container',
-                    html: '<div style="width:28px; height:28px; background-color:#e11d48; border:3px solid white; border-radius:50% 50% 50% 0; transform:rotate(-45deg); box-shadow:-3px 3px 8px rgba(0,0,0,0.4); position:relative;"><div style="position:absolute; width:8px; height:8px; background:white; border-radius:50%; top:50%; left:50%; transform:translate(-50%, -50%);"></div></div>',
+                    className: 'bg-transparent',
+                    html: '<div class="custom-pin"></div>',
                     iconSize: [28, 28], iconAnchor: [14, 28], popupAnchor: [0, -30]
                 });
                 
                 const marker = L.marker([m[1], m[2]], { icon: redPin }).addTo(map);
                 
-                // 【完美修復 1】這就是消滅白邊的終極寫法！
-                // 把 div 的寬度設為 100% 填滿，外部 popup content width 已經鎖定為 260px
                 marker.bindPopup(`
                     <div style="width:100%; display:flex; flex-direction:column; box-sizing:border-box;">
                         <div style="position:relative; width:100%; height:200px; background:#000;">
