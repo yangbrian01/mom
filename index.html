@@ -20,35 +20,54 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
   <style>
-    :root { --glass-bg: rgba(255, 255, 255, 0.12); --glass-border: rgba(255, 255, 255, 0.18); }
+    :root { --glass-bg: rgba(255, 255, 255, 0.1); --glass-border: rgba(255, 255, 255, 0.15); }
     
-    /* 【效能優化】強制 GPU 加速，改善卡頓 */
+    /* 【效能大解鎖】移除會卡頓的 CSS，採用原生平滑滾動 */
     html, body { 
-        overscroll-behavior: none; 
-        font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans TC', sans-serif; 
         background: #000; color: #fff; overflow: hidden; margin: 0; 
-        user-select: none; -webkit-touch-callout: none; 
-        width: 100%; height: 100%; position: fixed;
+        font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans TC', sans-serif; 
+        width: 100%; height: 100%; position: fixed; overscroll-behavior: none;
+        -webkit-tap-highlight-color: transparent;
     }
-    .serif-font { font-family: 'Noto Serif TC', serif; }
     
-    #parallax-bg { position: fixed; top: -10%; left: -10%; width: 120%; height: 120%; z-index: -2; pointer-events: none; transition: transform 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94); will-change: transform; }
+    /* 降低 filter 複雜度，減少手機發燙 */
+    #parallax-bg { position: fixed; top: -10%; left: -10%; width: 120%; height: 120%; z-index: -2; pointer-events: none; transition: transform 0.1s; will-change: transform; }
     .aurora-bg {
-      position: absolute; inset: 0; transform: translate3d(0,0,0); /* GPU 加速 */
-      background: radial-gradient(circle at 50% 50%, rgba(79, 70, 229, 0.6) 0%, transparent 40%),
-                  radial-gradient(circle at 80% 20%, rgba(244, 63, 94, 0.6) 0%, transparent 40%),
-                  radial-gradient(circle at 20% 80%, rgba(14, 165, 233, 0.6) 0%, transparent 40%);
-      filter: blur(60px) saturate(150%); animation: aurora 25s linear infinite alternate; will-change: transform;
+      position: absolute; inset: 0; transform: translateZ(0);
+      background: radial-gradient(circle at 50% 50%, rgba(79, 70, 229, 0.5) 0%, transparent 50%),
+                  radial-gradient(circle at 80% 20%, rgba(244, 63, 94, 0.5) 0%, transparent 50%),
+                  radial-gradient(circle at 20% 80%, rgba(14, 165, 233, 0.5) 0%, transparent 50%);
+      filter: blur(50px) saturate(120%); animation: aurora 20s linear infinite alternate;
     }
     @keyframes aurora { 0% { transform: rotate(0deg) scale(1); } 100% { transform: rotate(360deg) scale(1.1); } }
 
+    /* 輕量化毛玻璃 */
     .spatial-glass {
-      background: var(--glass-bg); backdrop-filter: blur(25px) saturate(180%); -webkit-backdrop-filter: blur(25px) saturate(180%);
-      border: 1px solid var(--glass-border); box-shadow: 0 20px 40px rgba(0,0,0,0.15); transform: translate3d(0,0,0);
+      background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border); box-shadow: 0 10px 30px rgba(0,0,0,0.1); transform: translateZ(0);
     }
-    .text-glow { text-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-    .ssr-glow { text-shadow: 0 0 20px rgba(251, 191, 36, 1); color: #FBBF24; }
+    .text-glow { text-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+    .serif-font { font-family: 'Noto Serif TC', serif; }
 
+    /* 【高級版 Face ID】 */
+    .face-id-box {
+        width: 80px; height: 80px; border: 2px solid rgba(255,255,255,0.2); border-radius: 22px;
+        position: relative; display: flex; align-items: center; justify-content: center;
+        box-shadow: inset 0 0 20px rgba(255,255,255,0.05), 0 0 30px rgba(99,102,241,0.2);
+        overflow: hidden;
+    }
+    .face-id-laser {
+        position: absolute; width: 100%; height: 2px; background: #34d399;
+        box-shadow: 0 0 15px 2px #34d399; animation: faceIdScan 2s ease-in-out infinite;
+    }
+    @keyframes faceIdScan { 0%, 100% { top: 0; opacity: 0; } 10%, 90% { opacity: 1; } 50% { top: 100%; } }
+
+    /* Widget 照片輪播 */
+    .photo-widget { position: relative; overflow: hidden; height: 160px; border-radius: 24px; }
+    .photo-slide { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.5s ease-in-out; }
+    .photo-slide.active { opacity: 1; }
+
+    /* 動態島 */
     #dynamic-island {
         position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
         background: #000; color: #fff; padding: 12px 24px; border-radius: 40px;
@@ -63,25 +82,25 @@
       transform: skewX(-25deg); animation: shine 4s infinite; z-index: 10; pointer-events: none;
     }
 
-    @keyframes scan { 0%, 100% { top: 0; opacity: 0; } 10%, 90% { opacity: 1; } 50% { top: 100%; } }
-    .animate-scan { animation: scan 2s ease-in-out infinite; }
-
     .wallet-pass {
       position: relative; background: #fff; color: #000; border-radius: 20px; padding: 24px; margin-bottom: 24px;
       mask-image: radial-gradient(circle at 0px 50%, transparent 12px, black 13px), radial-gradient(circle at 100% 50%, transparent 12px, black 13px);
-      mask-size: 51% 100%, 51% 100%; mask-position: left, right; mask-repeat: no-repeat; transition: transform 0.4s; transform: translate3d(0,0,0);
+      mask-size: 51% 100%, 51% 100%; mask-position: left, right; mask-repeat: no-repeat; transition: transform 0.2s;
     }
     .wallet-pass::after { content: ''; position: absolute; left: 24px; right: 24px; top: 50%; border-top: 2px dashed rgba(0,0,0,0.1); }
-    .wallet-pass:active { transform: scale(0.95); }
+    .wallet-pass:active { transform: scale(0.97); }
 
     ::-webkit-scrollbar { display: none; }
     
+    /* 【修復】極致順滑的 Scroll 設定 */
     .view { 
-        position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
-        overflow-y: auto; padding-bottom: 120px; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; 
+        position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s; 
+        overflow-y: auto; padding-bottom: 120px; -webkit-overflow-scrolling: touch; 
+        touch-action: pan-y; /* 允許原生上下滑動 */
+        transform: translateX(20px);
     }
-    .view.active { opacity: 1; pointer-events: auto; transform: scale(1); }
-    .view:not(.active) { transform: scale(0.95) translateY(20px); }
+    .view.active { opacity: 1; pointer-events: auto; transform: translateX(0); }
+    .view.swipe-left { transform: translateX(-20px); }
 
     .dock { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; padding: 12px; border-radius: 32px; z-index: 1000; }
     .dock-btn { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; transition: all 0.3s; color: rgba(255,255,255,0.6); }
@@ -89,40 +108,34 @@
 
     .music-bar { width: 4px; background: white; border-radius: 2px; transition: height 0.1s; display: inline-block; margin: 0 2px; }
     
-    /* 【優化】地圖標記彈跳掉落動畫 */
-    .leaflet-marker-icon { animation: markerDrop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
-    @keyframes markerDrop {
-        0% { transform: translateY(-200px) scaleY(1.5); opacity: 0; }
-        50% { transform: translateY(10px) scaleY(0.8); opacity: 1; }
-        100% { transform: translateY(0) scaleY(1); }
-    }
+    #leaflet-map { width: 100%; height: calc(100vh - 180px); border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 10; border: 1px solid rgba(255,255,255,0.2); }
+    .leaflet-popup-content-wrapper { border-radius: 16px; padding: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); overflow: hidden; }
+    .popup-img-container { width: 100%; height: 160px; background: #f3f4f6; display: flex; align-items: center; justify-content: center; border-radius: 16px 16px 0 0; }
+    .popup-img-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
 
-    /* 【優化】放大照片彈窗 */
-    #leaflet-map { width: 100%; height: calc(100vh - 180px); border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 10; border: 1px solid rgba(255,255,255,0.2); transform: translate3d(0,0,0); }
-    .leaflet-popup-content-wrapper { border-radius: 20px; padding: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.3); }
-    .leaflet-popup-content { margin: 0; width: 280px !important; } /* 加大寬度 */
-    .popup-img-container { width: 100%; height: 200px; background: #e5e7eb; display: flex; align-items: center; justify-content: center; } /* 加大高度 */
-    .popup-img-container img { width: 100%; height: 100%; object-fit: cover; } /* 確保填滿不變形 */
-
-    .touch-ripple {
-      position: fixed; width: 80px; height: 80px; background: radial-gradient(circle, rgba(129, 140, 248, 0.6) 0%, rgba(99, 102, 241, 0) 70%);
-      border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%) scale(0.5); z-index: 9999; opacity: 1; mix-blend-mode: screen;
-    }
+    /* 拍貼機滿版 UI */
+    #photobooth-modal { position: fixed; inset: 0; background: #000; z-index: 5000; display: none; flex-direction: column; }
+    #video-container { position: relative; flex: 1; overflow: hidden; background: #111; }
+    #camera-video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); /* 鏡像 */ }
+    #ar-overlay { position: absolute; inset: 0; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 40px 20px; }
   </style>
 </head>
 <body>
 
   <div id="dynamic-island"><span id="di-icon" class="text-xl">✅</span><span id="di-text" class="text-sm font-bold tracking-widest text-white"></span></div>
 
-  <div id="lock-screen" class="fixed inset-0 bg-black z-[9999] flex flex-col items-center justify-center transition-opacity duration-1000 hidden">
-    <div class="relative w-28 h-28 mb-8">
-        <div class="absolute inset-0 border-4 border-indigo-500 rounded-3xl opacity-30"></div>
-        <div class="absolute inset-0 flex items-center justify-center text-indigo-400">
-            <svg class="w-16 h-16 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><path d="M9 9h.01"></path><path d="M15 9h.01"></path></svg>
-        </div>
-        <div class="absolute top-0 left-0 w-full h-1 bg-indigo-400 shadow-[0_0_20px_#818cf8] animate-scan"></div>
+  <div id="lock-screen" class="fixed inset-0 bg-[#050505] z-[9999] flex flex-col items-center justify-center transition-opacity duration-1000 hidden">
+    <div class="face-id-box mb-8">
+        <div class="face-id-laser"></div>
+        <svg class="w-10 h-10 text-white opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+            <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+            <path d="M9 9h.01"></path><path d="M15 9h.01"></path>
+            <path d="M12 12v3"></path>
+            <path d="M8 16a4 4 0 0 0 8 0"></path>
+        </svg>
     </div>
-    <h2 id="lock-text" class="text-indigo-400 font-bold tracking-[0.3em] uppercase text-sm animate-pulse">Scanning Bio-Data...</h2>
+    <h2 id="lock-text" class="text-white font-bold tracking-[0.4em] uppercase text-xs animate-pulse opacity-80">Face ID</h2>
   </div>
 
   <div id="parallax-bg"><div class="aurora-bg"></div></div>
@@ -147,29 +160,48 @@
     </div>
   </div>
 
-  <div id="tour-complete-overlay" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[3000] hidden flex-col items-center justify-center text-center px-6">
-      <div class="text-6xl mb-6 animate-bounce">✈️</div>
-      <h2 class="text-3xl font-black text-white text-glow mb-2 serif-font">旅程回顧完成</h2>
-      <p class="text-sm text-white/70 tracking-widest leading-relaxed mt-4">我們一起走過的路，都是最珍貴的回憶。<br>未來還要一起去更多地方！</p>
-      <button onclick="document.getElementById('tour-complete-overlay').style.display='none'" class="mt-10 px-8 py-3 spatial-glass rounded-full text-sm font-bold uppercase tracking-widest active:scale-95 transition-transform">返回系統</button>
+  <div id="photobooth-modal">
+      <div id="video-container">
+          <video id="camera-video" autoplay playsinline></video>
+          <div id="ar-overlay">
+              <div class="text-center">
+                  <h2 class="text-3xl font-black text-white text-glow serif-font" style="text-shadow: 0 2px 10px rgba(0,0,0,0.8);">Mom, Happy Birthday</h2>
+                  <p class="text-white/80 text-sm tracking-widest mt-1 font-bold">2026.04.06</p>
+              </div>
+              <div class="flex justify-between items-end">
+                  <div class="text-7xl drop-shadow-2xl animate-bounce">🦉🐱</div>
+                  <div class="text-4xl drop-shadow-2xl opacity-70">✨</div>
+              </div>
+          </div>
+      </div>
+      <div class="h-32 bg-black flex items-center justify-between px-10">
+          <button onclick="closePhotobooth()" class="text-white/60 text-sm font-bold tracking-widest">取消</button>
+          <button onclick="takePhoto()" class="w-16 h-16 rounded-full bg-white border-4 border-gray-300 shadow-[0_0_20px_rgba(255,255,255,0.5)] active:scale-90 transition-transform"></button>
+          <div class="w-10"></div> </div>
   </div>
 
-  <main id="view-home" class="view px-6 pt-12">
+  <main id="view-home" class="view active px-6 pt-12">
     <h3 id="dynamic-greeting" class="text-xs font-bold tracking-widest text-indigo-300 mb-2 text-glow uppercase"></h3>
-    
-    <header class="mb-8 animate__animated animate__fadeInDown">
+    <header class="mb-6 animate__animated animate__fadeInDown">
       <h1 class="text-6xl font-black tracking-tighter text-glow serif-font">母后，生日快樂</h1>
     </header>
 
-    <div class="spatial-glass rounded-2xl px-4 py-3 mb-4 flex justify-between items-center shadow-lg">
-        <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-sm shadow-md">🎂</div>
+    <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="spatial-glass rounded-3xl p-4 flex flex-col justify-between">
+            <div class="w-8 h-8 rounded-full bg-indigo-500/80 flex items-center justify-center text-sm mb-3">🎂</div>
             <div>
                 <p class="text-[9px] text-white/70 font-bold uppercase tracking-widest">Countdown</p>
-                <p id="countdown-text" class="text-sm font-bold text-glow">計算中...</p>
+                <p id="countdown-text" class="text-xs font-bold text-glow mt-1">計算中...</p>
             </div>
         </div>
-        <div class="text-xs font-bold text-indigo-300">04.06</div>
+        <div class="spatial-glass photo-widget shadow-lg shadow-black/20" onclick="triggerVibration('light'); switchTab('map')">
+            <img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=400&auto=format&fit=crop" class="photo-slide active">
+            <img src="https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?q=80&w=400&auto=format&fit=crop" class="photo-slide">
+            <img src="https://images.unsplash.com/photo-1480796927426-f609979314bd?q=80&w=400&auto=format&fit=crop" class="photo-slide">
+            <div class="absolute bottom-2 right-3 bg-black/40 backdrop-blur-sm px-2 py-1 rounded-full">
+                <span class="text-[8px] font-bold tracking-widest text-white uppercase">2026.02 Japan</span>
+            </div>
+        </div>
     </div>
 
     <div class="spatial-glass rounded-2xl px-5 py-4 mb-8 flex items-center gap-4">
@@ -203,20 +235,25 @@
       </div>
     </div>
 
-    <div class="spatial-glass rounded-[32px] p-6 mb-6 magnetic flex items-center justify-between cursor-pointer active:scale-95 transition-transform" onclick="startGacha()">
-        <div>
-            <h3 class="font-bold text-xl text-yellow-300 text-glow serif-font">靈猴驚喜盲盒</h3>
-            <p class="text-[10px] text-white/70 tracking-widest uppercase mt-1 text-glow">抽取未知專屬服務</p>
+    <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="spatial-glass rounded-[28px] p-5 magnetic flex flex-col items-center justify-center text-center active:scale-95 transition-transform cursor-pointer" onclick="startGacha()">
+            <div class="text-4xl mb-2 drop-shadow-lg">🎁</div>
+            <h3 class="font-bold text-sm text-yellow-300 text-glow serif-font">驚喜盲盒</h3>
+            <p class="text-[8px] text-white/50 tracking-widest uppercase mt-1">Gacha</p>
         </div>
-        <div class="text-3xl bg-white/10 w-12 h-12 rounded-full flex items-center justify-center shadow-inner">🎁</div>
+        <div class="spatial-glass rounded-[28px] p-5 magnetic flex flex-col items-center justify-center text-center active:scale-95 transition-transform cursor-pointer" onclick="openPhotobooth()">
+            <div class="text-4xl mb-2 drop-shadow-lg">📸</div>
+            <h3 class="font-bold text-sm text-pink-300 text-glow serif-font">專屬合影</h3>
+            <p class="text-[8px] text-white/50 tracking-widest uppercase mt-1">AR Camera</p>
+        </div>
     </div>
 
-    <div class="spatial-glass rounded-[32px] p-6 magnetic relative overflow-hidden">
+    <div class="spatial-glass rounded-[32px] p-6 mb-8 relative overflow-hidden">
       <div class="flex gap-4 items-center mb-6 relative z-10">
         <div class="text-3xl bg-white/10 w-14 h-14 flex items-center justify-center rounded-2xl shadow-inner">🦉</div>
         <div>
             <h3 class="font-bold text-xl text-glow serif-font">管家快速指令</h3>
-            <p class="text-xs text-white/70 text-glow mt-1">一鍵發送通知，動態島回饋</p>
+            <p class="text-xs text-white/70 text-glow mt-1">點擊發送通知</p>
         </div>
       </div>
       <div class="grid grid-cols-2 gap-3 relative z-10">
@@ -231,7 +268,7 @@
   <main id="view-map" class="view px-6 pt-16 relative">
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-3xl font-black text-white drop-shadow-lg text-glow serif-font">千與千尋的足跡</h2>
-        <button onclick="startMapTour()" class="spatial-glass px-4 py-2 rounded-full text-xs font-bold tracking-widest uppercase flex items-center gap-2 active:scale-95 transition-transform text-glow">▶ 自動導覽</button>
+        <button onclick="startMapTour()" class="spatial-glass px-4 py-2 rounded-full text-xs font-bold tracking-widest uppercase flex items-center gap-2 active:scale-95 transition-transform text-glow">▶ 導覽</button>
     </div>
     <div id="leaflet-map" class="spatial-glass"></div>
   </main>
@@ -252,9 +289,9 @@
   </main>
 
   <nav class="dock spatial-glass">
-    <div class="dock-btn active magnetic" onclick="switchView('home', this)">🏠</div>
-    <div class="dock-btn magnetic" onclick="switchView('map', this)">🗺️</div>
-    <div class="dock-btn magnetic" onclick="switchView('wallet', this)">🎫</div>
+    <div class="dock-btn active" id="tab-home" onclick="switchTab('home')">🏠</div>
+    <div class="dock-btn" id="tab-map" onclick="switchTab('map')">🗺️</div>
+    <div class="dock-btn" id="tab-wallet" onclick="switchTab('wallet')">🎫</div>
   </nav>
 
   <audio id="bgm" src="你的音樂網址" loop preload="auto"></audio>
@@ -263,61 +300,83 @@
   <script>
     const GAS = 'https://script.google.com/macros/s/AKfycbxxknkKwWS-Vtqo3pKovAMstLtQrXeyD7DhnILzeeisIBCGHmh03zFjFAdmF47ZXtv_/exec';
     let map, mapMarkers = [], memoriesData = [], servicesData = []; 
-    let audio = document.getElementById('bgm');
-    let mapAudio = document.getElementById('map-bgm');
+    let audio = document.getElementById('bgm'), mapAudio = document.getElementById('map-bgm');
     let isGachaRunning = false, isRequesting = false, isTouring = false, hasUnlockedAudio = false;
+
+    // --- 【全螢幕手勢切換 (Swipe Gestures)】 ---
+    const tabs = ['home', 'map', 'wallet'];
+    let currentTabIdx = 0;
+    let touchStartX = 0;
+
+    document.addEventListener('touchstart', e => {
+        // 如果碰到地圖或相機畫面，不觸發 Swipe 避免干擾
+        if(e.target.closest('#leaflet-map') || document.getElementById('photobooth-modal').style.display === 'flex') return;
+        touchStartX = e.changedTouches[0].screenX;
+    }, {passive: true});
+
+    document.addEventListener('touchend', e => {
+        if(e.target.closest('#leaflet-map') || document.getElementById('photobooth-modal').style.display === 'flex') return;
+        let touchEndX = e.changedTouches[0].screenX;
+        let deltaX = touchEndX - touchStartX;
+        
+        if (deltaX < -70) { // 向左滑，下一頁
+            if (currentTabIdx < tabs.length - 1) switchTab(tabs[currentTabIdx + 1], 'left');
+        } else if (deltaX > 70) { // 向右滑，上一頁
+            if (currentTabIdx > 0) switchTab(tabs[currentTabIdx - 1], 'right');
+        }
+    }, {passive: true});
+
+    function switchTab(id, direction = 'none') {
+        triggerVibration('light');
+        currentTabIdx = tabs.indexOf(id);
+        
+        document.querySelectorAll('.dock-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab-' + id).classList.add('active');
+
+        document.querySelectorAll('.view').forEach(v => {
+            if(v.id === 'view-' + id) {
+                v.className = 'view active'; // 重置 transform 並顯示
+            } else {
+                // 決定退場方向
+                if(direction === 'left') v.className = 'view swipe-left';
+                else if (direction === 'right') v.className = 'view'; // 預設向右退
+                else v.className = 'view';
+            }
+        });
+        
+        // 雙音軌優雅切換
+        if(id !== 'home' && !audio.paused) gsap.to(audio, { volume: 0, duration: 0.8, onComplete: () => { audio.pause(); document.querySelectorAll('.music-bar').forEach(b => b.style.height = '4px'); }});
+        if(id !== 'map' && !mapAudio.paused) { isTouring = false; gsap.to(mapAudio, { volume: 0, duration: 1, onComplete: () => mapAudio.pause() }); }
+        if(id === 'map') setTimeout(() => map.invalidateSize(), 300);
+    }
+
+    // --- 【時光膠囊照片輪播】 ---
+    setInterval(() => {
+        const slides = document.querySelectorAll('.photo-slide');
+        let activeIdx = Array.from(slides).findIndex(s => s.classList.contains('active'));
+        slides[activeIdx].classList.remove('active');
+        activeIdx = (activeIdx + 1) % slides.length;
+        slides[activeIdx].classList.add('active');
+    }, 4000);
 
     // --- 日夜問候語 ---
     function updateGreeting() {
         const hr = new Date().getHours();
-        let greeting = "";
+        let greeting = "夜深了，皇家管家持續為您守衛。";
         if (hr >= 5 && hr < 12) greeting = "早安母后，準備好迎接美好的一天了嗎？";
         else if (hr >= 12 && hr < 18) greeting = "午後愉快，需要幫您泡杯茶嗎？";
-        else greeting = "夜深了，皇家管家持續為您守衛。";
         document.getElementById('dynamic-greeting').innerText = greeting;
     }
     updateGreeting();
 
-    // --- 視差效果 Parallax ---
-    window.addEventListener('mousemove', (e) => {
-        const x = (e.clientX / window.innerWidth - 0.5) * 20;
-        const y = (e.clientY / window.innerHeight - 0.5) * 20;
-        document.getElementById('parallax-bg').style.transform = `translate3d(${x}px, ${y}px, 0)`;
-    });
-    function enableGyroParallax() {
-        window.addEventListener('deviceorientation', (e) => {
-            if(!e.gamma || !e.beta) return;
-            const x = (e.gamma / 90) * 30; 
-            const y = ((e.beta - 45) / 90) * 30; 
-            document.getElementById('parallax-bg').style.transform = `translate3d(${x}px, ${y}px, 0)`;
-        });
-    }
-
-    // --- 動態島 ---
     function showIsland(icon, text) {
         const di = document.getElementById('dynamic-island');
-        document.getElementById('di-icon').innerText = icon;
-        document.getElementById('di-text').innerText = text;
+        document.getElementById('di-icon').innerText = icon; document.getElementById('di-text').innerText = text;
         triggerVibration('success');
         gsap.to(di, { top: 45, duration: 0.6, ease: "back.out(1.5)" });
         setTimeout(() => gsap.to(di, { top: -100, duration: 0.5, ease: "power2.in" }), 3500);
     }
 
-    // --- 觸控光暈 ---
-    document.addEventListener('pointerdown', (e) => {
-        if(!hasUnlockedAudio) { 
-            audio.play().then(() => audio.pause()).catch(()=>{}); 
-            mapAudio.play().then(() => mapAudio.pause()).catch(()=>{}); 
-            hasUnlockedAudio = true; 
-        }
-        const ripple = document.createElement('div');
-        ripple.className = 'touch-ripple';
-        ripple.style.left = e.clientX + 'px'; ripple.style.top = e.clientY + 'px';
-        document.body.appendChild(ripple);
-        gsap.to(ripple, { scale: 2, opacity: 0, duration: 0.6, ease: "power2.out", onComplete: () => ripple.remove() });
-    });
-
-    // --- 震動與灑花 ---
     function triggerVibration(type) {
         if (!navigator.vibrate) return;
         if (type === 'tick') navigator.vibrate(5); 
@@ -336,12 +395,8 @@
       }());
     }
 
-    // --- 生日倒數 ---
     function updateCountdown() {
-        const now = new Date();
-        const bday = new Date('2026-04-06T00:00:00');
-        const endBday = new Date('2026-04-06T23:59:59');
-
+        const now = new Date(); const bday = new Date('2026-04-06T00:00:00'); const endBday = new Date('2026-04-06T23:59:59');
         if (now > endBday) {
             document.getElementById('countdown-text').innerText = "任務圓滿達成 ✨";
             if(!sessionStorage.getItem('fireworks_done')) { triggerFireworks(); sessionStorage.setItem('fireworks_done', 'true'); }
@@ -350,17 +405,13 @@
             if(!sessionStorage.getItem('bday_fireworks')) { triggerFireworks(); sessionStorage.setItem('bday_fireworks', 'true'); }
         } else {
             const diff = bday - now;
-            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
-            const m = Math.floor((diff / 1000 / 60) % 60);
+            const d = Math.floor(diff / (1000 * 60 * 60 * 24)); const h = Math.floor((diff / (1000 * 60 * 60)) % 24); const m = Math.floor((diff / 1000 / 60) % 60);
             document.getElementById('countdown-text').innerText = `${d}天 ${h}時 ${m}分`;
         }
     }
     setInterval(updateCountdown, 1000); updateCountdown();
 
-    // --- 【優化】長按解鎖密函 (打字機特效) ---
-    let pressTimer;
-    let isTyping = false;
+    let pressTimer; let isTyping = false;
     const musicCard = document.getElementById('music-card');
     const secretContent = "驚喜嗎？這是我特別藏的秘密功能。\n\n寫這個系統比以前做訂餐系統還要花心思，因為這是專屬妳的 2026 生日禮物。\n謝謝妳一直包容我，陪我準備報考北藝大，陪我去日本留下那麼多回憶。\n\n接下來的日子，也請多多指教！生日快樂！";
     
@@ -371,26 +422,20 @@
             triggerVibration('success');
             document.getElementById('secret-letter-modal').style.display = 'flex';
             gsap.fromTo('#secret-letter-content', {y: 100, opacity: 0}, {y: 0, opacity: 1, duration: 0.8, ease: "back.out(1.2)"});
-            
-            // 打字機邏輯
             if(!isTyping) {
                 isTyping = true;
-                const container = document.getElementById('secret-text-container');
-                container.innerHTML = "";
+                const container = document.getElementById('secret-text-container'); container.innerHTML = "";
                 let i = 0;
                 function typeWriter() {
                     if (i < secretContent.length) {
                         container.innerHTML += secretContent.charAt(i) === '\n' ? '<br>' : secretContent.charAt(i);
                         if(secretContent.charAt(i) !== '\n') triggerVibration('tick');
-                        i++;
-                        setTimeout(typeWriter, 60); // 打字速度
+                        i++; setTimeout(typeWriter, 60);
                     } else {
-                        gsap.to('#secret-sign', { opacity: 1, duration: 1 });
-                        gsap.to('#secret-close-btn', { opacity: 1, duration: 1, delay: 0.5 });
-                        triggerConfetti();
+                        gsap.to('#secret-sign', { opacity: 1, duration: 1 }); gsap.to('#secret-close-btn', { opacity: 1, duration: 1, delay: 0.5 }); triggerConfetti();
                     }
                 }
-                setTimeout(typeWriter, 800); // 彈出後等一下再開始打字
+                setTimeout(typeWriter, 800);
             }
         }, 1500);
     }
@@ -403,102 +448,44 @@
     musicCard.addEventListener('mouseup', () => { cancelPress(); requestMotionPermission(); });
     musicCard.addEventListener('mouseleave', cancelPress);
 
-    function closeSecretLetter() {
-        gsap.to('#secret-letter-content', {y: 50, opacity: 0, duration: 0.4, onComplete: () => {
-            document.getElementById('secret-letter-modal').style.display = 'none';
-        }});
-    }
-
-    function initMagnetic() {
-      document.querySelectorAll('.magnetic').forEach(btn => {
-        btn.addEventListener('mousemove', (e) => {
-          const rect = btn.getBoundingClientRect();
-          gsap.to(btn, { x: (e.clientX - rect.left - rect.width/2)*0.1, y: (e.clientY - rect.top - rect.height/2)*0.1, duration: 0.4, ease: "power2.out" });
-        });
-        btn.addEventListener('mouseleave', () => gsap.to(btn, { x: 0, y: 0, duration: 0.7, ease: "elastic.out(1, 0.3)" }));
-      });
-    }
-
-    function switchView(id, el) {
-      triggerVibration('light');
-      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-      document.querySelectorAll('.dock-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById('view-' + id).classList.add('active');
-      el.classList.add('active');
-      
-      // 音樂淡出
-      if(id !== 'home' && !audio.paused) {
-          gsap.to(audio, { volume: 0, duration: 0.8, onComplete: () => {
-              audio.pause();
-              document.querySelectorAll('.music-bar').forEach(b => b.style.height = '4px');
-          }});
-      }
-      if(id === 'map') setTimeout(() => map.invalidateSize(), 300);
-      else { 
-          isTouring = false; 
-          // 離開地圖時，導覽音樂淡出
-          if(!mapAudio.paused) gsap.to(mapAudio, { volume: 0, duration: 1, onComplete: () => mapAudio.pause() });
-      }
-    }
+    function closeSecretLetter() { gsap.to('#secret-letter-content', {y: 50, opacity: 0, duration: 0.4, onComplete: () => { document.getElementById('secret-letter-modal').style.display = 'none'; }}); }
 
     function initMap() {
       map = L.map('leaflet-map', { zoomControl: false }).setView([35.0, 135.7], 5);
       L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
     }
 
-    let viewedMemories = new Set();
-    function checkMapCompletion() {
-        if(viewedMemories.size === memoriesData.length && memoriesData.length > 0) {
-            if(!sessionStorage.getItem('map_completed')) {
-                sessionStorage.setItem('map_completed', 'true');
-                setTimeout(() => {
-                    document.getElementById('tour-complete-overlay').style.display = 'flex';
-                    triggerFireworks(); triggerVibration('success');
-                }, 1000);
-            }
-        }
-    }
-
     window.onload = async () => {
       initMap();
-      if(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission !== 'function') {
-          enableGyroParallax();
-      }
-
+      const skipFaceId = sessionStorage.getItem('skip_face_id');
       const lockScreen = document.getElementById('lock-screen');
-      if (!sessionStorage.getItem('skip_face_id')) {
-          lockScreen.style.display = 'flex';
-      } else {
+      
+      if (skipFaceId) {
           sessionStorage.removeItem('skip_face_id');
-          lockScreen.style.display = 'none';
           document.getElementById('view-home').classList.add('active');
+      } else {
+          lockScreen.style.display = 'flex';
+          setTimeout(() => document.getElementById('lock-text').innerText = "Face ID Verified", 1200);
       }
 
       try {
         const res = await fetch(`${GAS}?action=getData`);
         const data = await res.json();
-        memoriesData = data.memories;
-        servicesData = data.services; // 儲存供前端盲盒使用
+        memoriesData = data.memories; servicesData = data.services;
 
         memoriesData.forEach((m, i) => {
           const redIcon = new L.Icon({
               iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
               shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-              iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], className: 'marker-drop' // 加入掉落動畫
+              iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
           });
           const marker = L.marker([m[1], m[2]], { icon: redIcon }).addTo(map);
           marker.bindPopup(`
-              <div style="color:#000; width:280px; font-family: sans-serif;">
-                  <div class="popup-img-container" style="margin-bottom:12px;">
-                      <img src="${m[4]}">
-                  </div>
-                  <div style="padding: 0 12px 12px 12px;">
-                      <b style="font-size:18px; display:block; margin-bottom:6px;">${m[0]}</b>
-                      <p style="font-size:14px; color:#555; line-height:1.5; margin:0;">${m[3]}</p>
-                  </div>
+              <div style="color:#000; width:220px;">
+                  <div class="popup-img-container" style="margin-bottom:10px;"><img src="${m[4]}"></div>
+                  <div style="padding: 0 8px 8px 8px;"><b style="font-size:16px; display:block; margin-bottom:4px;">${m[0]}</b><p style="font-size:12px; color:#666; line-height:1.4; margin:0;">${m[3]}</p></div>
               </div>
           `);
-          marker.on('click', () => { viewedMemories.add(i); checkMapCompletion(); });
           mapMarkers.push(marker);
         });
 
@@ -513,33 +500,24 @@
               <div class="text-right"><p class="text-[10px] text-gray-400 uppercase tracking-widest">Valid</p><p class="text-xl font-black text-indigo-600">${s[4]} <span class="text-sm text-gray-400 font-normal">left</span></p></div>
             </div>
             <div class="absolute inset-0 bg-white/0 flex items-center justify-center opacity-0 hover:bg-white/90 hover:opacity-100 transition-all rounded-20px cursor-pointer backdrop-blur-sm" onclick="redeem('${s[0]}', this)">
-                <span class="btn-text bg-black text-white px-8 py-3 rounded-full font-bold shadow-2xl tracking-widest uppercase transition-all duration-300">Tap to Excute</span>
+                <span class="btn-text bg-black text-white px-8 py-3 rounded-full font-bold shadow-2xl tracking-widest uppercase transition-all">Tap to Excute</span>
             </div>
           </div>`).join('');
 
-        initMagnetic();
-
-        if (!sessionStorage.getItem('skip_face_id')) {
+        if (!skipFaceId) {
             setTimeout(() => {
-                const lockText = document.getElementById('lock-text');
-                lockText.classList.remove('animate-pulse');
-                lockText.style.color = '#34d399';
-                lockText.innerText = '身分確認：最尊貴的母后大人';
+                document.getElementById('lock-text').style.color = '#34d399';
+                document.querySelector('.animate-scan').style.display = 'none';
                 triggerVibration('success');
                 setTimeout(() => {
                     lockScreen.style.opacity = '0';
                     document.getElementById('view-home').classList.add('active');
-                    sessionStorage.setItem('os_unlocked', 'true');
                     setTimeout(() => { lockScreen.style.display = 'none'; }, 1000); 
-                }, 1500);
-            }, 1500);
+                }, 800);
+            }, 1000);
         }
       } catch (e) { 
-        if (!sessionStorage.getItem('skip_face_id')) {
-            document.getElementById('lock-text').innerText = '離線登入';
-            document.getElementById('view-home').classList.add('active');
-            setTimeout(() => { lockScreen.style.display = 'none'; }, 1000);
-        }
+        if (!skipFaceId) { document.getElementById('view-home').classList.add('active'); lockScreen.style.display = 'none'; }
       }
     };
 
@@ -548,62 +526,39 @@
         if (isRequesting) return;
         triggerVibration('light');
         if (!confirm(`發送指令：「${msg}」？`)) return;
-        
-        isRequesting = true;
-        showIsland('⏳', '指令傳送中...');
-        const allBtns = document.querySelectorAll('.sos-btn');
-        allBtns.forEach(b => { b.style.pointerEvents = 'none'; b.style.opacity = '0.5'; });
-
-        try {
-            await fetch(`${GAS}?action=redeem&id=SOS&msg=${encodeURIComponent(msg)}`);
-            showIsland('✔️', '已送達兒子手機！');
-        } catch(e) {
-            showIsland('❌', '傳送失敗'); triggerVibration('error');
-        } finally { 
-            isRequesting = false; 
-            allBtns.forEach(b => { b.style.pointerEvents = 'auto'; b.style.opacity = '1'; });
-        }
+        isRequesting = true; showIsland('⏳', '指令傳送中...');
+        try { await fetch(`${GAS}?action=redeem&id=SOS&msg=${encodeURIComponent(msg)}`); showIsland('✔️', '已送達！'); } 
+        catch(e) { showIsland('❌', '傳送失敗'); triggerVibration('error'); } 
+        finally { isRequesting = false; }
     }
 
     // --- 許願池 ---
     async function sendWish() {
-        const input = document.getElementById('wish-input');
-        const wish = input.value.trim();
-        if(!wish) return alert('請輸入願望喔！');
+        const input = document.getElementById('wish-input'); const wish = input.value.trim();
+        if(!wish) return alert('請輸入願望！');
         if(isRequesting) return;
-
-        isRequesting = true;
-        showIsland('⏳', '願望發射中...');
-        try {
-            await fetch(`${GAS}?action=redeem&id=SOS&msg=${encodeURIComponent("🌟 [皇家許願池] " + wish)}`);
-            showIsland('✨', '願望已傳達！'); triggerConfetti(); input.value = '';
-        } catch(e) { showIsland('❌', '傳送失敗'); } 
-        finally { isRequesting = false; }
+        isRequesting = true; showIsland('⏳', '願望發射中...');
+        try { await fetch(`${GAS}?action=redeem&id=SOS&msg=${encodeURIComponent("🌟 [皇家許願池] " + wish)}`); showIsland('✨', '願望已傳達！'); triggerConfetti(); input.value = ''; } 
+        catch(e) { showIsland('❌', '傳送失敗'); } finally { isRequesting = false; }
     }
 
-    // --- 體感音樂 (包含陀螺儀視差解鎖) ---
+    // --- 體感音樂 ---
     let lastX = 0, lastY = 0;
     function requestMotionPermission() {
         if(pressTimer) return;
-        triggerVibration('light');
-        audio.volume = 1; 
-        audio.play().then(() => audio.pause()).catch(e => console.log("等待實體互動"));
+        triggerVibration('light'); audio.volume = 1; 
+        audio.play().then(() => audio.pause()).catch(()=>{});
         
         const reqMotion = (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') ? DeviceMotionEvent.requestPermission() : Promise.resolve('granted');
-        const reqOrientation = (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') ? DeviceOrientationEvent.requestPermission() : Promise.resolve('granted');
-
-        Promise.all([reqMotion, reqOrientation]).then(states => {
-            if (states.every(s => s === 'granted')) {
-                startMotion(); enableGyroParallax();
-            } else { alert("需允許動作感測才能體驗完整功能喔！"); }
+        Promise.all([reqMotion]).then(states => {
+            if (states.every(s => s === 'granted')) startMotion(); else alert("需允許動作感測喔！");
         }).catch(console.error);
     }
 
     function startMotion() {
         document.getElementById('motion-status').innerText = "連線成功：請揮動手機";
         window.addEventListener('devicemotion', (e) => {
-            let acc = e.accelerationIncludingGravity;
-            if(!acc) return;
+            let acc = e.accelerationIncludingGravity; if(!acc) return;
             let delta = Math.abs(acc.x - lastX) + Math.abs(acc.y - lastY);
             if (delta > 8) { 
                 if (audio.paused) { audio.volume = 1; audio.play(); }
@@ -615,51 +570,32 @@
         });
     }
 
-    // --- 【優化】純前端運算盲盒 (不再卡頓，加入選擇機制與 SSR) ---
+    // --- 盲盒抽卡 ---
     function startGacha() {
         if (isGachaRunning) return;
-        isGachaRunning = true;
-        triggerVibration('light');
-
-        // 過濾有庫存的項目
         const available = servicesData.filter(s => s[4] > 0);
-        if(available.length === 0) {
-            alert('抱歉，今日盲盒庫存已空！');
-            isGachaRunning = false;
-            return;
-        }
+        if(available.length === 0) return alert('今日盲盒已空！');
 
-        const overlay = document.getElementById('gacha-overlay');
-        overlay.style.display = 'flex';
-        document.getElementById('gacha-actions').classList.add('hidden'); // 隱藏按鈕
+        isGachaRunning = true; triggerVibration('light');
+        const overlay = document.getElementById('gacha-overlay'); overlay.style.display = 'flex';
+        document.getElementById('gacha-actions').classList.add('hidden');
         
-        // 齒輪震動
         let tickInterval = setInterval(() => triggerVibration('tick'), 100);
-
         const tl = gsap.timeline();
         tl.to("#gacha-cube", { rotation: 15, x: 10, duration: 0.1, repeat: 12, yoyo: true })
-          .to("#gacha-cube", { scale: 12, opacity: 0, duration: 0.6, ease: "expo.in", onComplete: async () => {
+          .to("#gacha-cube", { scale: 12, opacity: 0, duration: 0.6, ease: "expo.in", onComplete: () => {
               clearInterval(tickInterval);
-              
-              // SSR 判定 (5%)
               const isSSR = Math.random() < 0.05;
               let resultItem = null;
 
               if (isSSR) {
-                  // 直接呼叫後端發 Line
                   fetch(`${GAS}?action=redeem&id=SOS&msg=${encodeURIComponent("🐎 [SSR] 召喚老馬代打：爸爸去買宵夜")}`);
-                  document.getElementById('gacha-result').innerHTML = "✨ SSR 極稀有掉落 ✨<br><br>🐎 召喚老馬代打<br><span class='text-lg'>(爸爸去買宵夜)</span>";
-                  document.getElementById('gacha-result').classList.add('ssr-glow');
-                  
-                  document.getElementById('gacha-actions').innerHTML = `<button onclick="location.reload()" class="w-full py-3 bg-yellow-500 text-black rounded-full font-bold tracking-widest shadow-lg">驚喜收下</button>`;
+                  document.getElementById('gacha-result').innerHTML = "✨ SSR 極稀有 ✨<br>🐎 召喚老馬代打";
+                  document.getElementById('gacha-actions').innerHTML = `<button onclick="keepGacha()" class="w-full py-3 bg-yellow-500 text-black rounded-full font-bold shadow-lg">驚喜收下</button>`;
                   triggerVibration('ssr');
               } else {
-                  // 正常抽卡 (純前端挑選)
                   resultItem = available[Math.floor(Math.random() * available.length)];
-                  document.getElementById('gacha-result').innerText = "恭喜獲得：\n" + resultItem[1];
-                  document.getElementById('gacha-result').classList.remove('ssr-glow');
-                  
-                  // 綁定兌換按鈕
+                  document.getElementById('gacha-result').innerText = "獲得：\n" + resultItem[1];
                   const redeemBtn = document.getElementById('gacha-redeem-btn');
                   redeemBtn.onclick = () => { redeem(resultItem[0], redeemBtn); };
                   triggerVibration('success');
@@ -672,87 +608,72 @@
           }});
     }
 
-    function keepGacha() {
-        // 收進票夾 (不做任何事，直接重整畫面)
-        sessionStorage.setItem('skip_face_id', 'true');
-        location.reload();
-    }
+    function keepGacha() { sessionStorage.setItem('skip_face_id', 'true'); location.reload(); }
 
-    // --- 票券兌換 ---
     async function redeem(id, btnEl) {
       if (isRequesting) return;
       triggerVibration('light');
-      // 如果不是在盲盒畫面內，才跳出 Alert 詢問
-      if(!btnEl.id.includes('gacha')) {
-          if (!confirm('指紋驗證 (模擬)：確認使用票券？')) return;
-          const pass = document.getElementById('pass-'+id);
-          gsap.to(pass, { scale: 0.95, opacity: 0.8, duration: 0.3 });
-      }
+      if(!btnEl.id.includes('gacha') && !confirm('確認使用票券？')) return;
       
-      isRequesting = true;
-      const originalText = btnEl.innerText;
-      btnEl.innerText = '⏳ 處理中...';
+      isRequesting = true; const originalText = btnEl.innerText; btnEl.innerText = '⏳ 處理中...';
+      const pass = document.getElementById('pass-'+id); if(pass) gsap.to(pass, { scale: 0.95, opacity: 0.8, duration: 0.3 });
       
       try {
           const res = await fetch(`${GAS}?action=redeem&id=${id}`);
-          const resultText = await res.text();
-          if(resultText === 'SUCCESS') {
-            btnEl.innerText = '✨ 兌換成功';
-            triggerConfetti(); triggerVibration('success');
-            
-            if(btnEl.id.includes('gacha')) {
-                setTimeout(() => { sessionStorage.setItem('skip_face_id', 'true'); location.reload(); }, 2000);
-            } else {
-                gsap.to(document.getElementById('pass-'+id), { y: -500, opacity: 0, duration: 0.8, ease: "power3.in", delay: 0.5, onComplete: () => {
-                    sessionStorage.setItem('skip_face_id', 'true'); location.reload();
-                }});
-            }
-          } else if(resultText === 'BUSY') {
-            alert("系統忙碌中，請稍後！"); triggerVibration('error');
-            btnEl.innerText = originalText;
-          } else {
-            alert("票券失效或次數不足"); triggerVibration('error');
-            btnEl.innerText = originalText;
-          }
-      } catch(e) {
-          alert('連線超時'); triggerVibration('error');
-          btnEl.innerText = originalText;
-      } finally { isRequesting = false; }
+          const text = await res.text();
+          if(text === 'SUCCESS') {
+            btnEl.innerText = '✨ 成功'; triggerConfetti(); triggerVibration('success');
+            setTimeout(() => { sessionStorage.setItem('skip_face_id', 'true'); location.reload(); }, 1500);
+          } else { alert("失敗或忙碌中"); btnEl.innerText = originalText; if(pass) gsap.to(pass, { scale: 1, opacity: 1 }); }
+      } catch(e) { alert('連線超時'); btnEl.innerText = originalText; } finally { isRequesting = false; }
     }
 
-    // --- 【優化】地圖自動導覽 (BGM 淡入連動) ---
     async function startMapTour() {
         if(isTouring) return;
-        isTouring = true;
-        triggerVibration('light');
-        
-        // 停止主音樂，淡入地圖音樂
+        isTouring = true; triggerVibration('light');
         if(!audio.paused) gsap.to(audio, { volume: 0, duration: 1, onComplete: () => audio.pause() });
-        mapAudio.volume = 0;
-        mapAudio.play().catch(()=>{});
-        gsap.to(mapAudio, { volume: 1, duration: 2 });
+        mapAudio.volume = 0; mapAudio.play().catch(()=>{}); gsap.to(mapAudio, { volume: 1, duration: 2 });
 
         for (let i = 0; i < memoriesData.length; i++) {
             if (!isTouring) break; 
-            const m = memoriesData[i];
-            const marker = mapMarkers[i];
-            
-            map.flyTo([m[1], m[2]], 15, { duration: 2.5 });
+            map.flyTo([memoriesData[i][1], memoriesData[i][2]], 15, { duration: 2.5 });
             await new Promise(r => setTimeout(r, 2800)); 
-            
             if (!isTouring) break;
-            marker.openPopup();
-            viewedMemories.add(i);
-            triggerVibration('light');
-            
+            mapMarkers[i].openPopup(); triggerVibration('light');
             await new Promise(r => setTimeout(r, 4000)); 
-            marker.closePopup();
-            checkMapCompletion();
+            mapMarkers[i].closePopup();
         }
-        
-        isTouring = false;
-        // 導覽結束，音樂淡出
-        gsap.to(mapAudio, { volume: 0, duration: 2, onComplete: () => mapAudio.pause() });
+        isTouring = false; gsap.to(mapAudio, { volume: 0, duration: 2, onComplete: () => mapAudio.pause() });
+    }
+
+    // --- 【皇家拍貼機 (WebRTC)】 ---
+    let stream;
+    async function openPhotobooth() {
+        triggerVibration('light');
+        document.getElementById('photobooth-modal').style.display = 'flex';
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+            document.getElementById('camera-video').srcObject = stream;
+        } catch(err) {
+            alert('無法存取相機，請確認瀏覽器權限！');
+            closePhotobooth();
+        }
+    }
+
+    function closePhotobooth() {
+        if(stream) stream.getTracks().forEach(track => track.stop());
+        document.getElementById('photobooth-modal').style.display = 'none';
+    }
+
+    function takePhoto() {
+        triggerVibration('success');
+        triggerConfetti();
+        showIsland('📸', '喀嚓！生日快樂！');
+        // 這裡可以加上 Canvas 截圖邏輯，或是讓畫面閃白一下代表拍照
+        const flash = document.createElement('div');
+        flash.style.cssText = 'position:fixed;inset:0;background:white;z-index:9999;transition:opacity 0.5s;';
+        document.body.appendChild(flash);
+        setTimeout(() => { flash.style.opacity = '0'; setTimeout(()=>flash.remove(),500); }, 100);
     }
   </script>
 </body>
