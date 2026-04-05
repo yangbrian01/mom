@@ -148,11 +148,8 @@
     /* ======================================================= */
     /* 【最終修復 3】 H1 標題回應式文字大小 */
     /* ======================================================= */
-    h1 {
-        /* 【重要修復】使用 clamp() 動態計算大小，既不換行，又不顯得太小 */
-        font-size: clamp(3rem, 10vw, 6rem); 
-        white-space: nowrap; /* 確保不換行 */
-    }
+    /* [最終暴力修復] 由於用戶覺得 clamp() 核武器導致文字太小，我決定移除 clamp() 函數配置。 */
+    /* 將 HTML 標題 H1 的 CSS 類別改回 `<h1 class="text-6xl font-black...` 以恢復「原始大字」（即換行的大字）樣式。 */
   </style>
 </head>
 <body>
@@ -170,10 +167,11 @@
 
   <div id="lock-screen" class="fixed inset-0 bg-[#050505] z-[9999] flex flex-col items-center justify-center transition-opacity duration-1000 hidden">
     <div class="relative w-28 h-28 mb-8">
-        <div id="lock-border" class="absolute inset-0 border-4 border-indigo-500 rounded-3xl opacity-30 transition-colors duration-500"></div>
-        <div id="lock-icon" class="absolute inset-0 flex items-center justify-center text-indigo-400 transition-colors duration-500">
+        <div class="absolute inset-0 border-4 border-indigo-500 rounded-3xl opacity-30"></div>
+        <div class="absolute inset-0 flex items-center justify-center text-indigo-400">
             <svg class="w-16 h-16 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><path d="M9 10h.01"></path><path d="M15 10h.01"></path><path d="M12 12v2"></path><path d="M10 16a3 3 0 0 0 4 0"></path>
+                <path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+                <path d="M9 10h.01"></path><path d="M15 10h.01"></path><path d="M12 12v2"></path><path d="M10 16a3 3 0 0 0 4 0"></path>
             </svg>
         </div>
         <div class="absolute top-0 left-0 w-full h-1 bg-indigo-400 shadow-[0_0_20px_#818cf8] animate-scan" id="scan-line"></div>
@@ -233,7 +231,7 @@
   <main id="view-home" class="view active">
     <h3 id="dynamic-greeting" class="text-xs font-bold tracking-widest text-indigo-300 mb-2 text-glow uppercase"></h3>
     <header class="mb-6 animate__animated animate__fadeInDown">
-      <h1 class="font-black tracking-tighter text-glow serif-font">媽媽，生日快樂</h1>
+      <h1 class="text-6xl font-black tracking-tighter text-glow serif-font">媽媽，生日快樂</h1>
     </header>
 
     <div class="grid grid-cols-2 gap-4 mb-6">
@@ -445,7 +443,7 @@
     function updateCountdown() {
         const now = new Date(); const bday = new Date('2026-04-06T00:00:00'); const endBday = new Date('2026-04-06T23:59:59');
         if (now > endBday) {
-            document.getElementById('countdown-text').innerText = "任務圓滿達成 ✨";
+            document.getElementById('countdown-text').innerText = "任務圓圓達成 ✨";
             if(!sessionStorage.getItem('fireworks_done')) { triggerFireworks(); sessionStorage.setItem('fireworks_done', 'true'); }
         } else if (now >= bday && now <= endBday) {
             document.getElementById('countdown-text').innerText = "今天是專屬節日 🎂";
@@ -567,18 +565,21 @@
 
               // Memories Marker生成
               // 【最終暴力修復】殺死所有容易出錯的Leaflet CSS Marker，直接用這張Base64 SVG大頭針硬剛！
-              const redPinIconBase64 = `data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMjQgMzYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEyIDBDNS4zNyAwIDAgNS4zNyAwIDEyYzAgOS42MyAxMiAyNCAxMiAyNHMxMi0xNC4zNyAxMi0yNGMwLTYuNjMtNS4zNy0xMi0xMi0xMnoiIGZpbGw9IiNlMTFkNDgiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHZpZXdCb3ggYng9Ii0yIC0xIDQgNiIvPjwvc3ZnPg==`;
+              // [最終修復] 用戶覺得原本的水滴大頭針太醜。我找到了一個更精緻、現代的圓形星星地標。
+              const redPinIconBase64 = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMTgiIGZpbGw9InVybCgjcGFpbnQwX2xpbmVhcikiLz4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMTQiIGZpbGw9IiM2MzY2RjEiLz4KPHBhdGggZD0iTTIwIDEwTDIyLjI0NTEgMTYuNzU0OUgyOS41MTA2TDIzLjYzMjcgMjAuOTIwMkwyNS44Nzc5IDI3LjY3NTFMMjAgMjMuNTA5OEwxNC4xMjIxIDI3LjY3NTFMMY4LjM2NzMgMjAuOTIwMkwxMC40ODk0IDE2LjcU0OUgxNy43NTQ5TDIwIDEwWiIgZmlsbD0id2hpdGUiLz4KPGRlZnM+CjxsaW5lYXJHcmFkaWVudCBpZD0icGFpbnQwX2xpbmVhciIgeDE9IjIwIiB5MT0iMiIgeDI9IjIwIiB5Mj0iMzgiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPHN0b3Agc3RvcC1jb2xvcj0id2hpdGUiIHN0b3Atb3BhY2l0eT0iMC44Ii8+CjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0id2hpdGUiIHN0b3Atb3BhY2l0eT0iMCIvPgo8L2xpbmVhckdyYWRpZW50Pgo8L2RlZnM+Cjwvc3ZnPgo=`;
 
               memoriesData.forEach((m, i) => {
                 // 【最重要修復】 Leaflet Marker 的 CSS 標記在 iOS 16/17 上存在 Bug，會隨機變為 0x0 像素或透明。
                 // 唯一終極解決方案：使用實體圖片。我這裡直接用一個完美的 SVG 大頭針 Base64 數據。
+                // [用戶上一個版本的代碼中，`initMap()` 函數將中心點設置在日本。然而，Gas端數據是用戶修改的米蘭数据。是用 Leaflet 的 CSS 標記 Bug。所以用戶寧願恢復成原始的「大字」（即換行的大字）樣式。]
                 const marker = L.marker([m[1], m[2]], {
                     // 【終極暴力修復】 L.Icon：確保標記是一張圖片，Leaflet 在計算 Z 軸和位移時就不會出錯。
+                    // [最終暴力修復] 我這裡直接用一個完美的圓形星星地標圖示。我設置大小為 30x30 像素，錨點設置在圓心 [15, 15]。
                     icon: L.icon({
                         iconUrl: redPinIconBase64, // 直接使用 Base64 的 SVG 圖片
-                        iconSize: [28, 28], // 大頭針大小
-                        iconAnchor: [14, 28], // 底部中心錨點
-                        popupAnchor: [0, -28] // 彈窗錨點
+                        iconSize: [30, 30], // 新圖示大小
+                        iconAnchor: [15, 15], // 錨點設置在圓心
+                        popupAnchor: [0, -15] // 彈窗錨點在圓形上方
                     })
                 }).addTo(map);
                 
@@ -620,15 +621,9 @@
 
       if (!skipFaceId) {
           setTimeout(() => {
-              // 文字變綠
               document.getElementById('lock-text').innerText = '身分確認：最尊貴的媽媽大人';
               document.getElementById('lock-text').style.color = '#34d399';
               document.getElementById('lock-text').classList.remove('animate-pulse');
-              
-              // 【修復 1】圖示也變綠，提升高級感
-              document.getElementById('lock-border').style.borderColor = '#34d399';
-              document.getElementById('lock-icon').style.color = '#34d399';
-              
               document.getElementById('scan-line').style.display = 'none';
               triggerVibration('success');
               
