@@ -57,6 +57,9 @@
     }
     .tilt-card:active { --scale: 0.96; }
 
+    .marker-drop { animation: markerDrop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
+    @keyframes markerDrop { 0% { transform: translateY(-100px) scale(0); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+
     .spatial-glass {
       position: relative; overflow: hidden;
       background: var(--glass-bg); backdrop-filter: blur(25px) saturate(180%); -webkit-backdrop-filter: blur(25px) saturate(180%);
@@ -134,11 +137,6 @@
     .touch-ripple {
       position: fixed; width: 80px; height: 80px; background: radial-gradient(circle, rgba(129, 140, 248, 0.6) 0%, rgba(99, 102, 241, 0) 70%);
       border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%) scale(0.5); z-index: 9999; opacity: 1; mix-blend-mode: screen;
-    }
-
-    h1 {
-        font-size: 5rem;
-        white-space: nowrap;
     }
   </style>
 </head>
@@ -221,7 +219,7 @@
   <main id="view-home" class="view active">
     <h3 id="dynamic-greeting" class="text-xs font-bold tracking-widest text-indigo-300 mb-2 text-glow uppercase"></h3>
     <header class="mb-6 animate__animated animate__fadeInDown">
-      <h1 class="font-black tracking-tighter text-glow serif-font">媽媽，生日快樂</h1>
+      <h1 class="text-6xl font-black tracking-tighter text-glow serif-font leading-[1.1]">媽媽，生日快樂</h1>
     </header>
 
     <div class="grid grid-cols-2 gap-4 mb-6">
@@ -507,11 +505,9 @@
           lockScreen.style.display = 'flex';
       }
 
-      const fetchPromise = fetch(`${GAS}?action=getData`)
+      fetch(`${GAS}?action=getData`)
       .then(res => res.json())
-      .catch(err => { console.error("資料載入失敗:", err); return null; });
-
-      fetchPromise.then(async data => {
+      .then(async data => {
           if(data) {
               memoriesData = data.memories || []; servicesData = data.services || [];
               const widgetData = data.widgets || [];
@@ -549,23 +545,18 @@
 
               memoriesData.forEach((m, i) => {
                 // =======================================================
-                // 【終極修復：紅筆地圖標記】
-                // 這是一個純 HTML 的完美水滴型大頭針，絕不依賴外部圖片連結。
+                // 【終極修復：綠筆地標】絕美玫瑰紅水滴大頭針 (Base64)
+                // 這是最頂級、帶有白底跟漂亮身型的現代化地標，絕對不會破圖。
                 // =======================================================
-                const redPinHtml = `
-                    <div style="width: 32px; height: 48px; filter: drop-shadow(0px 6px 4px rgba(0,0,0,0.4));">
-                         <svg viewBox="0 0 32 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                           <path d="M16 0C7.16344 0 0 7.16344 0 16C0 27.6 16 48 16 48C16 48 32 27.6 32 16C32 7.16344 24.8366 0 16 0Z" fill="#E11D48"/>
-                           <circle cx="16" cy="16" r="7" fill="white"/>
-                         </svg>
-                    </div>`;
+                const redPinIconBase64 = `data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 384 512' width='32' height='42'%3E%3Cpath fill='%23F43F5E' d='M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z'/%3E%3Ccircle cx='192' cy='192' r='80' fill='%23ffffff'/%3E%3C/svg%3E`;
 
-                const redPin = L.divIcon({
-                    className: 'bg-transparent border-0', // 移除預設的邊框
-                    html: redPinHtml,
-                    iconSize: [32, 48],
-                    iconAnchor: [16, 48],
-                    popupAnchor: [0, -48]
+                const redPin = new L.Icon({
+                    iconUrl: redPinIconBase64,
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                    iconSize: [32, 42],
+                    iconAnchor: [16, 42],
+                    popupAnchor: [0, -42],
+                    className: 'marker-drop'
                 });
                 
                 const marker = L.marker([m[1], m[2]], { icon: redPin }).addTo(map);
@@ -609,19 +600,16 @@
           setTimeout(() => {
               document.getElementById('lock-text').innerText = '身分確認：最尊貴的媽媽大人';
               
-              // =======================================================
-              // 【最終修復：紫筆 Face ID】正確透過 JS 替換 Tailwind 綠色 Class
-              // =======================================================
               document.getElementById('lock-text').style.color = '#34d399';
               document.getElementById('lock-text').classList.remove('animate-pulse');
               
               const borderEl = document.getElementById('lock-border');
               borderEl.classList.remove('border-indigo-500');
-              borderEl.classList.add('border-emerald-400'); // 換上翡翠綠
+              borderEl.classList.add('border-emerald-400');
 
               const iconEl = document.getElementById('lock-icon');
               iconEl.classList.remove('text-indigo-400');
-              iconEl.classList.add('text-emerald-400');     // 換上翡翠綠
+              iconEl.classList.add('text-emerald-400');
               
               document.getElementById('scan-line').style.display = 'none';
               triggerVibration('success');
@@ -649,16 +637,6 @@
           }
       }, { once: true });
     };
-
-    async function sos(msg) {
-        if (isRequesting) return;
-        triggerVibration('light');
-        if (!confirm(`發送指令：「${msg}」？`)) return;
-        isRequesting = true; showIsland('⏳', '指令傳送中...');
-        try { await fetch(`${GAS}?action=redeem&id=SOS&msg=${encodeURIComponent(msg)}`); showIsland('✔️', '已送達兒子手機！'); } 
-        catch(e) { showIsland('❌', '傳送失敗'); triggerVibration('error'); } 
-        finally { isRequesting = false; }
-    }
 
     async function sendWish() {
         const input = document.getElementById('wish-input'); const wish = input.value.trim();
@@ -728,7 +706,7 @@
 
               if (isSSR) {
                   fetch(`${GAS}?action=redeem&id=SOS&msg=${encodeURIComponent("🐎 [SSR] 召喚老馬代打：爸爸去買宵夜")}`);
-                  document.getElementById('gacha-result').innerHTML = "✨ SSR 極稀有 ✨<br>🐎 召喚老馬代打";
+                  document.getElementById('gacha-result').innerHTML = "✨ SSR 極稀有 ✨<br>🐎 召喚爸爸代打";
                   document.getElementById('gacha-result').classList.add('ssr-glow');
                   document.getElementById('gacha-actions').innerHTML = `<button onclick="keepGacha()" class="w-full py-3 bg-yellow-500 text-black rounded-full font-bold shadow-lg">驚喜收下</button>`;
                   triggerVibration('ssr');
