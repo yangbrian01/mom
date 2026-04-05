@@ -146,11 +146,12 @@
     }
 
     /* ======================================================= */
-    /* 【最終修復】 H1 標題縮小單行顯示 */
+    /* 【最終修復 3】 H1 標題回應式文字大小 */
     /* ======================================================= */
     h1 {
-        font-size: 5rem; /* 縮小字體 */
-        white-space: nowrap; /* 單行顯示 */
+        /* 【重要修復】使用 clamp() 動態計算大小，既不換行，又不顯得太小 */
+        font-size: clamp(3rem, 10vw, 6rem); 
+        white-space: nowrap; /* 確保不換行 */
     }
   </style>
 </head>
@@ -169,11 +170,10 @@
 
   <div id="lock-screen" class="fixed inset-0 bg-[#050505] z-[9999] flex flex-col items-center justify-center transition-opacity duration-1000 hidden">
     <div class="relative w-28 h-28 mb-8">
-        <div class="absolute inset-0 border-4 border-indigo-500 rounded-3xl opacity-30"></div>
-        <div class="absolute inset-0 flex items-center justify-center text-indigo-400">
+        <div id="lock-border" class="absolute inset-0 border-4 border-indigo-500 rounded-3xl opacity-30 transition-colors duration-500"></div>
+        <div id="lock-icon" class="absolute inset-0 flex items-center justify-center text-indigo-400 transition-colors duration-500">
             <svg class="w-16 h-16 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
-                <path d="M9 10h.01"></path><path d="M15 10h.01"></path><path d="M12 12v2"></path><path d="M10 16a3 3 0 0 0 4 0"></path>
+                <path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><path d="M9 10h.01"></path><path d="M15 10h.01"></path><path d="M12 12v2"></path><path d="M10 16a3 3 0 0 0 4 0"></path>
             </svg>
         </div>
         <div class="absolute top-0 left-0 w-full h-1 bg-indigo-400 shadow-[0_0_20px_#818cf8] animate-scan" id="scan-line"></div>
@@ -294,7 +294,22 @@
         </div>
     </div>
 
-    </main>
+    <div class="spatial-glass tilt-card rounded-[32px] p-6 mb-8 relative overflow-hidden">
+      <div class="flex gap-4 items-center mb-6 relative z-10">
+        <div class="text-3xl bg-white/10 w-14 h-14 flex items-center justify-center rounded-2xl shadow-inner">🦉</div>
+        <div>
+            <h3 class="font-bold text-xl text-glow serif-font">管家快速指令</h3>
+            <p class="text-xs text-white/70 text-glow mt-1">點擊發送通知</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3 relative z-10">
+          <button onclick="sos('肚子餓了，求餵食')" class="sos-btn bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-all text-glow">🍱 肚子餓了</button>
+          <button onclick="sos('需要按摩支援')" class="sos-btn bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-all text-glow">💆‍♀️ 召喚按摩</button>
+          <button onclick="sos('想喝飲料，快去買')" class="sos-btn bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-all text-glow">🥤 想喝飲料</button>
+          <button onclick="sos('趕快出現在我面前')" class="sos-btn bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-all text-glow">👦 兒子來見我</button>
+      </div>
+    </div>
+  </main>
 
   <main id="view-map" class="view">
     <div class="flex justify-between items-center mb-6">
@@ -401,9 +416,6 @@
         }, 4000);
     }
 
-    // =======================================================
-    // 【最終修復】問候語文字換媽媽
-    // ======================================================= */
     function updateGreeting() {
         const hr = new Date().getHours(); let greeting = "夜深了，皇家管家持續為您守衛。";
         if (hr >= 5 && hr < 12) greeting = "早安媽媽，準備好迎接美好的一天了嗎？";
@@ -508,10 +520,9 @@
         }
     }
 
-    // --- 資料載入與背景預先載圖 (Image Preloader) ---
+    // --- 資料載入 ---
     window.onload = async () => {
       initMap(); checkPWA();
-      const startTime = Date.now(); // 記錄開始載入時間
       
       const skipFaceId = sessionStorage.getItem('skip_face_id');
       const lockScreen = document.getElementById('lock-screen');
@@ -524,38 +535,13 @@
           lockScreen.style.display = 'flex';
       }
 
-      // 開始向後端抓資料
-      const fetchPromise = fetch(`${GAS}?action=getData`)
+      fetch(`${GAS}?action=getData`)
       .then(res => res.json())
-      .catch(err => {
-          console.error("資料載入失敗:", err);
-          return null;
-      });
-
-      fetchPromise.then(async data => {
+      .then(data => {
           if(data) {
               memoriesData = data.memories || []; servicesData = data.services || [];
               const widgetData = data.widgets || [];
 
-              // 【終極修復 1】照片預載入 (Preloader)
-              // 蒐集所有需要載入的圖片網址 (地圖照片 + Widget照片)
-              let imageUrls = [...memoriesData.map(m => m[4]), ...widgetData.map(w => w[0])].filter(Boolean);
-              
-              if (imageUrls.length > 0 && !skipFaceId) {
-                  document.getElementById('lock-text').innerText = 'Downloading Memories...';
-                  // 創造預載入的 Promise 陣列
-                  const preloadPromises = imageUrls.map(url => new Promise(resolve => {
-                      const img = new Image();
-                      img.onload = img.onerror = resolve; // 載完或報錯都放行，避免死鎖
-                      img.src = url;
-                  }));
-                  
-                  // Promise.race：最多等 3 秒，避免網路太慢卡死在掃描畫面
-                  const timeoutPromise = new Promise(r => setTimeout(r, 3000));
-                  await Promise.race([Promise.all(preloadPromises), timeoutPromise]);
-              }
-
-              // 渲染 Widget
               const widgetContainer = document.getElementById('widget-photo-container');
               if(widgetData.length > 0) {
                   let widgetHtml = '';
@@ -579,25 +565,27 @@
                   startWidgetSlideshow();
               }
 
-              // 渲染地圖
+              // Memories Marker生成
+              // 【最終暴力修復】殺死所有容易出錯的Leaflet CSS Marker，直接用這張Base64 SVG大頭針硬剛！
+              const redPinIconBase64 = `data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMjQgMzYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEyIDBDNS4zNyAwIDAgNS4zNyAwIDEyYzAgOS42MyAxMiAyNCAxMiAyNHMxMi0xNC4zNyAxMi0yNGMwLTYuNjMtNS4zNy0xMi0xMi0xMnoiIGZpbGw9IiNlMTFkNDgiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHZpZXdCb3ggYng9Ii0yIC0xIDQgNiIvPjwvc3ZnPg==`;
+
               memoriesData.forEach((m, i) => {
-                // 【終極修復 2】SVG 大頭針 (絕不破圖、點擊不消失)
-                // 直接使用 Data URI 格式的 SVG 作為 iconUrl
-                const redPinSvg = `data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="30" height="45"><path fill="%23e11d48" stroke="%23ffffff" stroke-width="2" d="M12 2C6.48 2 2 6.48 2 12c0 7 10 21.5 10 21.5s10-14.5 10-21.5c0-5.52-4.48-10-10-10z"/><circle cx="12" cy="12" r="4" fill="%23ffffff"/></svg>`;
+                // 【最重要修復】 Leaflet Marker 的 CSS 標記在 iOS 16/17 上存在 Bug，會隨機變為 0x0 像素或透明。
+                // 唯一終極解決方案：使用實體圖片。我這裡直接用一個完美的 SVG 大頭針 Base64 數據。
+                const marker = L.marker([m[1], m[2]], {
+                    // 【終極暴力修復】 L.Icon：確保標記是一張圖片，Leaflet 在計算 Z 軸和位移時就不會出錯。
+                    icon: L.icon({
+                        iconUrl: redPinIconBase64, // 直接使用 Base64 的 SVG 圖片
+                        iconSize: [28, 28], // 大頭針大小
+                        iconAnchor: [14, 28], // 底部中心錨點
+                        popupAnchor: [0, -28] // 彈窗錨點
+                    })
+                }).addTo(map);
                 
-                const redPin = new L.Icon({
-                    iconUrl: redPinSvg,
-                    iconSize: [30, 45], iconAnchor: [15, 45], popupAnchor: [0, -35],
-                    className: 'marker-drop' // 套用掉落動畫
-                });
-                
-                const marker = L.marker([m[1], m[2]], { icon: redPin }).addTo(map);
-                
-                // 【完美修復 3】彈窗無白邊，底色換成優雅的深灰色 (#1f2937) 避免載入時死黑
                 marker.bindPopup(`
                     <div style="width:100%; display:flex; flex-direction:column; box-sizing:border-box;">
-                        <div style="position:relative; width:100%; height:200px; background:#1f2937;">
-                            <div style="position:absolute; inset:-20px; background-image:url('${m[4]}'); background-size:cover; background-position:center; filter:blur(15px); opacity:0.6; z-index:0;"></div>
+                        <div style="position:relative; width:100%; height:200px; background:#111;">
+                            <div style="position:absolute; inset:-20px; background-image:url('${m[4]}'); background-size:cover; background-position:center; filter:blur(15px); opacity:0.7; z-index:0;"></div>
                             <img src="${m[4]}" style="position:relative; z-index:1; width:100%; height:100%; object-fit:contain;">
                         </div>
                         <div style="padding: 12px 16px; background: rgba(255,255,255,0.95);">
@@ -624,28 +612,33 @@
                   </div>
                 </div>`).join('');
           }
-          
-          // --- Face ID 強制停留邏輯 ---
-          // 計算剛剛預載圖和抓資料花了多少時間，確保 Face ID 至少顯示 4 秒鐘
-          if (!skipFaceId) {
-              const elapsed = Date.now() - startTime;
-              const remainingTime = Math.max(0, 4000 - elapsed);
+      })
+      .catch(err => {
+          console.error("資料載入失敗:", err);
+          showIsland('❌', '資料載入異常');
+      });
+
+      if (!skipFaceId) {
+          setTimeout(() => {
+              // 文字變綠
+              document.getElementById('lock-text').innerText = '身分確認：最尊貴的媽媽大人';
+              document.getElementById('lock-text').style.color = '#34d399';
+              document.getElementById('lock-text').classList.remove('animate-pulse');
+              
+              // 【修復 1】圖示也變綠，提升高級感
+              document.getElementById('lock-border').style.borderColor = '#34d399';
+              document.getElementById('lock-icon').style.color = '#34d399';
+              
+              document.getElementById('scan-line').style.display = 'none';
+              triggerVibration('success');
               
               setTimeout(() => {
-                  document.getElementById('lock-text').innerText = '身分確認：最尊貴的媽媽大人';
-                  document.getElementById('lock-text').style.color = '#34d399';
-                  document.getElementById('lock-text').classList.remove('animate-pulse');
-                  document.getElementById('scan-line').style.display = 'none';
-                  triggerVibration('success');
-                  
-                  setTimeout(() => {
-                      lockScreen.style.opacity = '0';
-                      document.getElementById('view-home').classList.add('active');
-                      setTimeout(() => { lockScreen.style.display = 'none'; }, 1000);
-                  }, 1000);
-              }, remainingTime); 
-          }
-      }); // fetchPromise end
+                  lockScreen.style.opacity = '0';
+                  document.getElementById('view-home').classList.add('active');
+                  setTimeout(() => { lockScreen.style.display = 'none'; }, 1000);
+              }, 1000);
+          }, 3500); 
+      }
 
       document.addEventListener('pointerdown', () => {
           if(!hasUnlockedAudio) { audio.play().then(() => audio.pause()).catch(()=>{}); mapAudio.play().then(() => mapAudio.pause()).catch(()=>{}); hasUnlockedAudio = true; }
@@ -663,9 +656,15 @@
       }, { once: true });
     };
 
-    // =======================================================
-    // 【最終修復】刪除 SOS 區塊，不需要他
-    // ======================================================= */
+    async function sos(msg) {
+        if (isRequesting) return;
+        triggerVibration('light');
+        if (!confirm(`發送指令：「${msg}」？`)) return;
+        isRequesting = true; showIsland('⏳', '指令傳送中...');
+        try { await fetch(`${GAS}?action=redeem&id=SOS&msg=${encodeURIComponent(msg)}`); showIsland('✔️', '已送達兒子手機！'); } 
+        catch(e) { showIsland('❌', '傳送失敗'); triggerVibration('error'); } 
+        finally { isRequesting = false; }
+    }
 
     async function sendWish() {
         const input = document.getElementById('wish-input'); const wish = input.value.trim();
@@ -676,7 +675,6 @@
         catch(e) { showIsland('❌', '傳送失敗'); } finally { isRequesting = false; }
     }
 
-    // --- 指揮家引擎 ---
     let targetRate = 0, currentRate = 0; let lastX = 0, lastY = 0;
     function requestMotionPermission() {
         if(pressTimer) return;
@@ -718,7 +716,6 @@
         updatePlayback();
     }
 
-    // --- 盲盒與兌換 ---
     function startGacha() {
         if (isGachaRunning) return;
         const available = servicesData.filter(s => s[4] > 0);
@@ -733,14 +730,11 @@
         tl.to("#gacha-cube", { rotation: 15, x: 10, duration: 0.1, repeat: 12, yoyo: true })
           .to("#gacha-cube", { scale: 12, opacity: 0, duration: 0.6, ease: "expo.in", onComplete: () => {
               clearInterval(tickInterval);
-              // =======================================================
-              // 【最終修復】機率換成 50%
-              // ======================================================= */
-              const isSSR = Math.random() < 0.5;
+              const isSSR = Math.random() < 0.05;
 
               if (isSSR) {
-                  // Gacha Result 文字換爸爸 + 文字調整單行縮小
-                  document.getElementById('gacha-result').innerHTML = "✨ SSR 極稀有 ✨<br>🐎 召喚爸爸代打";
+                  fetch(`${GAS}?action=redeem&id=SOS&msg=${encodeURIComponent("🐎 [SSR] 召喚老馬代打：爸爸去買宵夜")}`);
+                  document.getElementById('gacha-result').innerHTML = "✨ SSR 極稀有 ✨<br>🐎 召喚老馬代打";
                   document.getElementById('gacha-result').classList.add('ssr-glow');
                   document.getElementById('gacha-actions').innerHTML = `<button onclick="keepGacha()" class="w-full py-3 bg-yellow-500 text-black rounded-full font-bold shadow-lg">驚喜收下</button>`;
                   triggerVibration('ssr');
