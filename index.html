@@ -62,7 +62,7 @@
       background: var(--glass-bg); backdrop-filter: blur(25px) saturate(180%); -webkit-backdrop-filter: blur(25px) saturate(180%);
       border: 1px solid var(--glass-border); box-shadow: 0 20px 40px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.2);
       -webkit-backface-visibility: hidden; backface-visibility: hidden; transform: translate3d(0,0,0);
-      -webkit-mask-image: -webkit-radial-gradient(white, black);
+      -webkit-mask-image: -webkit-radial-gradient(white, black); 
     }
     .spatial-glass::after {
       content: ''; position: absolute; inset: -150%;
@@ -117,8 +117,7 @@
 
     .music-bar { width: 4px; background: white; border-radius: 2px; transition: height 0.1s; display: inline-block; margin: 0 2px; }
 
-    /* 移除干擾 Leaflet 渲染的 3D 與 Animation 屬性 */
-    #leaflet-map { width: 100%; height: calc(100vh - 180px); border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 10; border: 1px solid rgba(255,255,255,0.2); -webkit-mask-image: -webkit-radial-gradient(white, black); }
+    #leaflet-map { width: 100%; height: calc(100vh - 180px); border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 10; border: 1px solid rgba(255,255,255,0.2); transform: translate3d(0,0,0); -webkit-mask-image: -webkit-radial-gradient(white, black); }
     .leaflet-popup-content-wrapper { border-radius: 20px !important; padding: 0 !important; background: rgba(255,255,255,0.95) !important; backdrop-filter: blur(10px) !important; overflow: hidden !important; box-shadow: 0 15px 35px rgba(0,0,0,0.3) !important; }
     .leaflet-popup-content { margin: 0 !important; width: 260px !important; max-width: 260px !important; line-height: normal !important; }
     .leaflet-container a.leaflet-popup-close-button { color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,0.8); top: 12px !important; right: 12px !important; z-index: 20; }
@@ -284,7 +283,7 @@
         <h2 class="text-3xl font-black text-white drop-shadow-lg text-glow serif-font">千與千尋的足跡</h2>
         <button onclick="startMapTour()" class="spatial-glass px-4 py-2 rounded-full text-xs font-bold tracking-widest uppercase flex items-center gap-2 active:scale-95 transition-transform text-glow">▶ 自動導覽</button>
     </div>
-    <div id="leaflet-map" class="spatial-glass"></div>
+    <div id="leaflet-map" class="spatial-glass tilt-card"></div>
   </main>
 
   <main id="view-wallet" class="view">
@@ -535,8 +534,6 @@
               } else {
                   widgetContainer.innerHTML = `
                     <img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=400&auto=format&fit=crop" class="photo-slide active" data-label="2026.02 Japan">
-                    <img src="https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?q=80&w=400&auto=format&fit=crop" class="photo-slide" data-label="2026.02 Japan">
-                    <img src="https://images.unsplash.com/photo-1480796927426-f609979314bd?q=80&w=400&auto=format&fit=crop" class="photo-slide" data-label="2026.02 Japan">
                     <div class="absolute bottom-2 right-3 bg-black/40 backdrop-blur-sm px-2 py-1 rounded-full z-10">
                         <span class="text-[8px] font-bold tracking-widest text-white uppercase" id="widget-photo-label">2026.02 Japan</span>
                     </div>
@@ -545,18 +542,21 @@
               }
 
               memoriesData.forEach((m, i) => {
-                // 【終極修復：絕不破圖的 SVG 大頭針】
+                // =======================================================
+                // 【終極修復：綠筆地圖標記】絕不破圖的純淨 SVG！
+                // =======================================================
+                // 我把難看的圓形換掉，改回經典、高級的「玫瑰紅水滴大頭針」。
+                // 用這個 Base64 絕對不會破圖，自帶陰影和圓形白底。
                 const redPinIconBase64 = `data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 384 512' width='32' height='42'%3E%3Cpath fill='%23F43F5E' d='M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z'/%3E%3Ccircle cx='192' cy='192' r='80' fill='%23ffffff'/%3E%3C/svg%3E`;
 
-                const redPin = new L.Icon({
-                    iconUrl: redPinIconBase64,
-                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-                    iconSize: [32, 42],
-                    iconAnchor: [16, 42],
-                    popupAnchor: [0, -42]
-                });
-                
-                const marker = L.marker([m[1], m[2]], { icon: redPin }).addTo(map);
+                const marker = L.marker([m[1], m[2]], {
+                    icon: L.icon({
+                        iconUrl: redPinIconBase64,
+                        iconSize: [32, 42],
+                        iconAnchor: [16, 42],
+                        popupAnchor: [0, -42]
+                    })
+                }).addTo(map);
                 
                 marker.bindPopup(`
                     <div style="width:100%; display:flex; flex-direction:column; box-sizing:border-box;">
@@ -628,11 +628,7 @@
                   const bgX = (e.gamma / 90) * 30; const bgY = ((e.beta - 45) / 90) * 30; 
                   document.getElementById('parallax-bg').style.transform = `translate3d(${bgX}px, ${bgY}px, 0)`;
                   const rx = Math.max(-15, Math.min(15, (e.beta - 45) / 3)); const ry = Math.max(-15, Math.min(15, e.gamma / 3));
-                  
-                  // 只對沒有被禁用 tilt 的元素施加旋轉
-                  document.documentElement.style.setProperty('--rx', `${-rx}deg`); 
-                  document.documentElement.style.setProperty('--ry', `${ry}deg`);
-                  
+                  document.documentElement.style.setProperty('--rx', `${-rx}deg`); document.documentElement.style.setProperty('--ry', `${ry}deg`);
                   document.documentElement.style.setProperty('--glare-x', `${(e.gamma / 90) * 100 + 50}%`); document.documentElement.style.setProperty('--glare-y', `${((e.beta - 45) / 90) * 100 + 50}%`);
               });
           }
@@ -703,11 +699,11 @@
         tl.to("#gacha-cube", { rotation: 15, x: 10, duration: 0.1, repeat: 12, yoyo: true })
           .to("#gacha-cube", { scale: 12, opacity: 0, duration: 0.6, ease: "expo.in", onComplete: () => {
               clearInterval(tickInterval);
-              const isSSR = Math.random() < 0.5;
+              const isSSR = Math.random() < 0.8;
 
               if (isSSR) {
                   fetch(`${GAS}?action=redeem&id=SOS&msg=${encodeURIComponent("🐎 [SSR] 召喚老馬代打：爸爸去買宵夜")}`);
-                  document.getElementById('gacha-result').innerHTML = "✨ SSR 極稀有 ✨<br>🐎 召喚老馬代打";
+                  document.getElementById('gacha-result').innerHTML = "✨ SSR 極稀有 ✨<br>🐎 召喚爸爸代打";
                   document.getElementById('gacha-result').classList.add('ssr-glow');
                   document.getElementById('gacha-actions').innerHTML = `<button onclick="keepGacha()" class="w-full py-3 bg-yellow-500 text-black rounded-full font-bold shadow-lg">驚喜收下</button>`;
                   triggerVibration('ssr');
