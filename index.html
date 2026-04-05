@@ -43,7 +43,7 @@
     .aurora-spirited {
       position: absolute; inset: 0; transform: translate3d(0,0,0); opacity: 0;
       background: radial-gradient(circle at 50% 50%, rgba(153, 27, 27, 0.8) 0%, transparent 40%),
-                  radial-gradient(circle at 80% 20%, rgba(244, 63, 94, 0.6) 0%, transparent 40%),
+                  radial-gradient(circle at 80% 20%, rgba(251, 191, 36, 0.6) 0%, transparent 40%),
                   radial-gradient(circle at 20% 80%, rgba(190, 18, 60, 0.7) 0%, transparent 40%);
       filter: blur(60px) saturate(150%); animation: aurora 25s linear infinite alternate-reverse; transition: opacity 1.5s ease-in-out;
     }
@@ -62,7 +62,7 @@
       background: var(--glass-bg); backdrop-filter: blur(25px) saturate(180%); -webkit-backdrop-filter: blur(25px) saturate(180%);
       border: 1px solid var(--glass-border); box-shadow: 0 20px 40px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.2);
       -webkit-backface-visibility: hidden; backface-visibility: hidden; transform: translate3d(0,0,0);
-      -webkit-mask-image: -webkit-radial-gradient(white, black);
+      -webkit-mask-image: -webkit-radial-gradient(white, black); 
     }
     .spatial-glass::after {
       content: ''; position: absolute; inset: -150%;
@@ -117,7 +117,10 @@
 
     .music-bar { width: 4px; background: white; border-radius: 2px; transition: height 0.1s ease-in-out; display: inline-block; margin: 0 2px; }
 
-    #leaflet-map { width: 100%; height: calc(100vh - 180px); border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 10; border: 1px solid rgba(255,255,255,0.2); transform: translate3d(0,0,0); -webkit-mask-image: -webkit-radial-gradient(white, black); }
+    .marker-drop { animation: markerDrop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
+    @keyframes markerDrop { 0% { transform: translateY(-100px) scale(0); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+
+    #leaflet-map { width: 100%; height: calc(100vh - 180px); border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 10; border: 1px solid rgba(255,255,255,0.2); -webkit-mask-image: -webkit-radial-gradient(white, black); }
     .leaflet-popup-content-wrapper { border-radius: 20px !important; padding: 0 !important; background: rgba(255,255,255,0.95) !important; backdrop-filter: blur(10px) !important; overflow: hidden !important; box-shadow: 0 15px 35px rgba(0,0,0,0.3) !important; }
     .leaflet-popup-content { margin: 0 !important; width: 260px !important; max-width: 260px !important; line-height: normal !important; }
     .leaflet-container a.leaflet-popup-close-button { color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,0.8); top: 12px !important; right: 12px !important; z-index: 20; }
@@ -228,7 +231,7 @@
             </div>
         </div>
         
-        <div class="spatial-glass tilt-card photo-widget shadow-lg shadow-black/20" id="widget-photo-container">
+        <div class="spatial-glass tilt-card photo-widget shadow-lg shadow-black/20 cursor-pointer" onclick="triggerVibration('light'); switchTab('map')" id="widget-photo-container">
             <div class="absolute inset-0 flex items-center justify-center text-white/50 text-xs">載入中...</div>
         </div>
     </div>
@@ -283,7 +286,7 @@
         <h2 class="text-3xl font-black text-white drop-shadow-lg text-glow serif-font">千與千尋的足跡</h2>
         <button onclick="startMapTour()" class="spatial-glass px-4 py-2 rounded-full text-xs font-bold tracking-widest uppercase flex items-center gap-2 active:scale-95 transition-transform text-glow">▶ 自動導覽</button>
     </div>
-    <div id="leaflet-map" class="spatial-glass tilt-card"></div>
+    <div id="leaflet-map" class="spatial-glass"></div>
   </main>
 
   <main id="view-wallet" class="view">
@@ -316,7 +319,7 @@
     let audio = document.getElementById('bgm'), mapAudio = document.getElementById('map-bgm');
     let isGachaRunning = false, isRequesting = false, isTouring = false;
 
-    // --- 自動音樂波浪特效 ---
+    // --- 自動音樂頻譜跳動 ---
     setInterval(() => {
         if (!audio.paused && currentTabIdx === 0) {
             document.querySelectorAll('.music-bar').forEach(b => b.style.height = (Math.random()*24 + 4) + 'px');
@@ -354,6 +357,9 @@
         }
     }, {passive: true});
 
+    // =======================================================
+    // 【終極修復】音樂優雅淡入淡出 (3秒入、5秒出)
+    // =======================================================
     function switchTab(id, direction = 'none') {
         triggerVibration('light'); currentTabIdx = tabs.indexOf(id);
         document.querySelectorAll('.dock-btn').forEach(b => b.classList.remove('active'));
@@ -374,19 +380,24 @@
             isTouring = false;
         }
 
-        // --- 音樂安全切換 ---
+        // --- 音樂安全切換邏輯 (嚴格使用 3s 進入 / 5s 離開) ---
         if(id === 'home') {
+            // 切回首頁：獨奏 3 秒淡入，地圖音樂 5 秒淡出
+            if(!mapAudio.paused) gsap.to(mapAudio, { volume: 0, duration: 5, overwrite: "auto", onComplete: () => mapAudio.pause() });
+            
             if(audio.paused) {
                 audio.volume = 0;
                 audio.play().catch(()=>{});
-                gsap.to(audio, { volume: 1, duration: 1.5 });
             }
-            if(!mapAudio.paused) gsap.to(mapAudio, { volume: 0, duration: 1, onComplete: () => mapAudio.pause() });
+            gsap.to(audio, { volume: 1, duration: 3, overwrite: "auto" });
+            
         } else if (id === 'map') {
-            if(!audio.paused) gsap.to(audio, { volume: 0, duration: 1, onComplete: () => audio.pause() });
+            // 切到地圖：獨奏 5 秒淡出 (地圖音樂由自動導覽按鈕觸發)
+            if(!audio.paused) gsap.to(audio, { volume: 0, duration: 5, overwrite: "auto", onComplete: () => audio.pause() });
         } else {
-            if(!audio.paused) gsap.to(audio, { volume: 0, duration: 1, onComplete: () => audio.pause() });
-            if(!mapAudio.paused) gsap.to(mapAudio, { volume: 0, duration: 1, onComplete: () => mapAudio.pause() });
+            // 切到票夾：所有音樂 5 秒淡出
+            if(!audio.paused) gsap.to(audio, { volume: 0, duration: 5, overwrite: "auto", onComplete: () => audio.pause() });
+            if(!mapAudio.paused) gsap.to(mapAudio, { volume: 0, duration: 5, overwrite: "auto", onComplete: () => mapAudio.pause() });
         }
     }
 
@@ -508,21 +519,25 @@
         }
     }
 
-    // --- 自動播放優雅淡入邏輯 ---
+    // =======================================================
+    // 【終極修復】自動播放優雅淡入邏輯 (3秒)
+    // =======================================================
     function startBackgroundMusic() {
         audio.volume = 0;
         let playPromise = audio.play();
         if (playPromise !== undefined) {
             playPromise.then(() => {
                 // 自動播放成功，3秒優雅淡入
-                gsap.to(audio, { volume: 1, duration: 3 });
+                gsap.to(audio, { volume: 1, duration: 3, overwrite: "auto" });
             }).catch(error => {
-                // Apple 擋了自動播放！等待媽媽點擊任何地方解鎖
+                // Apple 擋了自動播放！等待點擊任何地方解鎖
                 console.log("iOS prevented autoplay. Waiting for first touch...");
                 document.addEventListener('pointerdown', function onFirstTouch() {
-                    audio.volume = 0;
-                    audio.play();
-                    gsap.to(audio, { volume: 1, duration: 2 });
+                    if (currentTabIdx === 0) {
+                        audio.volume = 0;
+                        audio.play();
+                        gsap.to(audio, { volume: 1, duration: 3, overwrite: "auto" });
+                    }
                     document.removeEventListener('pointerdown', onFirstTouch);
                 }, { once: true });
             });
@@ -540,7 +555,7 @@
           sessionStorage.removeItem('skip_face_id');
           lockScreen.style.display = 'none';
           document.getElementById('view-home').classList.add('active');
-          // 已經解鎖過了，重新整理直接嘗試播放
+          // 已解鎖過，直接淡入音樂
           startBackgroundMusic();
       } else {
           lockScreen.style.display = 'flex';
@@ -654,7 +669,7 @@
               setTimeout(() => {
                   lockScreen.style.opacity = '0';
                   document.getElementById('view-home').classList.add('active');
-                  // 解鎖動畫結束，直接開始播放音樂！
+                  // 解鎖完畢，自動音樂淡入
                   startBackgroundMusic();
                   setTimeout(() => { lockScreen.style.display = 'none'; }, 1000);
               }, 1000);
@@ -674,6 +689,15 @@
           }
       }, { once: true });
     };
+
+    async function sendWish() {
+        const input = document.getElementById('wish-input'); const wish = input.value.trim();
+        if(!wish) return alert('請輸入願望！');
+        if(isRequesting) return;
+        isRequesting = true; showIsland('⏳', '願望發射中...');
+        try { await fetch(`${GAS}?action=redeem&id=SOS&msg=${encodeURIComponent("🌟 [皇家許願池] " + wish)}`); showIsland('✨', '願望已傳達！'); triggerConfetti(); input.value = ''; } 
+        catch(e) { showIsland('❌', '傳送失敗'); } finally { isRequesting = false; }
+    }
 
     function startGacha() {
         if (isGachaRunning) return;
@@ -732,11 +756,22 @@
       } catch(e) { alert('連線超時'); btnEl.innerText = originalText; if(pass) gsap.to(pass, { '--scale': 1, opacity: 1 }); } finally { isRequesting = false; }
     }
 
+    // =======================================================
+    // 【終極修復】自動導覽音樂淡入淡出 (3秒入、5秒出)
+    // =======================================================
     async function startMapTour() {
         if(isTouring) return;
         isTouring = true; triggerVibration('light');
-        if(!audio.paused) gsap.to(audio, { volume: 0, duration: 1, onComplete: () => audio.pause() });
-        mapAudio.volume = 0; mapAudio.play().catch(()=>{}); gsap.to(mapAudio, { volume: 1, duration: 2 });
+        
+        // 切換音樂：獨奏 5 秒淡出
+        if(!audio.paused) gsap.to(audio, { volume: 0, duration: 5, overwrite: "auto", onComplete: () => audio.pause() });
+        
+        // 千與千尋 3 秒淡入
+        if(mapAudio.paused) {
+            mapAudio.volume = 0; 
+            mapAudio.play().catch(()=>{}); 
+        }
+        gsap.to(mapAudio, { volume: 1, duration: 3, overwrite: "auto" });
 
         for (let i = 0; i < memoriesData.length; i++) {
             if (!isTouring) break; 
@@ -747,7 +782,10 @@
             await new Promise(r => setTimeout(r, 4000)); 
             mapMarkers[i].closePopup(); checkMapCompletion();
         }
-        isTouring = false; gsap.to(mapAudio, { volume: 0, duration: 2, onComplete: () => mapAudio.pause() });
+        
+        isTouring = false; 
+        // 導覽結束：千與千尋 5 秒淡出
+        gsap.to(mapAudio, { volume: 0, duration: 5, overwrite: "auto", onComplete: () => mapAudio.pause() });
     }
 
     let stream;
