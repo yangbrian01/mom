@@ -36,8 +36,8 @@
     .aurora-bg {
       position: absolute; inset: 0; transform: translate3d(0,0,0);
       background: radial-gradient(circle at 50% 50%, rgba(79, 70, 229, 0.6) 0%, transparent 40%),
-                  radial-gradient(circle at 80% 20%, rgba(251, 191, 36, 0.6) 0%, transparent 40%),
-                  radial-gradient(circle at 20% 80%, rgba(190, 18, 60, 0.7) 0%, transparent 40%);
+                  radial-gradient(circle at 80% 20%, rgba(244, 63, 94, 0.6) 0%, transparent 40%),
+                  radial-gradient(circle at 20% 80%, rgba(14, 165, 233, 0.6) 0%, transparent 40%);
       filter: blur(60px) saturate(150%); animation: aurora 25s linear infinite alternate; transition: opacity 1.5s ease-in-out;
     }
     .aurora-spirited {
@@ -57,21 +57,12 @@
     }
     .tilt-card:active { --scale: 0.96; }
 
-    /* ======================================================= */
-    /* 【終極修復 2】SVG 大頭針的掉落動畫 (使用原生 Image Tag，保證不消失) */
-    /* ======================================================= */
-    .marker-drop { animation: markerDrop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
-    @keyframes markerDrop { 0% { transform: translateY(-100px) scale(0); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
-
-    /* ======================================================= */
-    /* 【終極暴力修復】殺死 Safari 圓角外洩的核武器！ */
-    /* ======================================================= */
     .spatial-glass {
       position: relative; overflow: hidden;
       background: var(--glass-bg); backdrop-filter: blur(25px) saturate(180%); -webkit-backdrop-filter: blur(25px) saturate(180%);
       border: 1px solid var(--glass-border); box-shadow: 0 20px 40px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.2);
       -webkit-backface-visibility: hidden; backface-visibility: hidden; transform: translate3d(0,0,0);
-      -webkit-mask-image: -webkit-radial-gradient(white, black); /* 絕對不漏邊 */
+      -webkit-mask-image: -webkit-radial-gradient(white, black);
     }
     .spatial-glass::after {
       content: ''; position: absolute; inset: -150%;
@@ -145,11 +136,10 @@
       border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%) scale(0.5); z-index: 9999; opacity: 1; mix-blend-mode: screen;
     }
 
-    /* ======================================================= */
-    /* 【最終修復 3】 H1 標題回應式文字大小 */
-    /* ======================================================= */
-    /* [最終暴力修復] 由於用戶覺得 clamp() 核武器導致文字太小，我決定移除 clamp() 函數配置。 */
-    /* 將 HTML 標題 H1 的 CSS 類別改回 `<h1 class="text-6xl font-black...` 以恢復「原始大字」（即換行的大字）樣式。 */
+    h1 {
+        font-size: 5rem;
+        white-space: nowrap;
+    }
   </style>
 </head>
 <body>
@@ -167,8 +157,8 @@
 
   <div id="lock-screen" class="fixed inset-0 bg-[#050505] z-[9999] flex flex-col items-center justify-center transition-opacity duration-1000 hidden">
     <div class="relative w-28 h-28 mb-8">
-        <div class="absolute inset-0 border-4 border-indigo-500 rounded-3xl opacity-30"></div>
-        <div class="absolute inset-0 flex items-center justify-center text-indigo-400">
+        <div id="lock-border" class="absolute inset-0 border-4 border-indigo-500 rounded-3xl opacity-30 transition-colors duration-500"></div>
+        <div id="lock-icon" class="absolute inset-0 flex items-center justify-center text-indigo-400 transition-colors duration-500">
             <svg class="w-16 h-16 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
                 <path d="M9 10h.01"></path><path d="M15 10h.01"></path><path d="M12 12v2"></path><path d="M10 16a3 3 0 0 0 4 0"></path>
@@ -231,7 +221,7 @@
   <main id="view-home" class="view active">
     <h3 id="dynamic-greeting" class="text-xs font-bold tracking-widest text-indigo-300 mb-2 text-glow uppercase"></h3>
     <header class="mb-6 animate__animated animate__fadeInDown">
-      <h1 class="text-6xl font-black tracking-tighter text-glow serif-font">媽媽，生日快樂</h1>
+      <h1 class="font-black tracking-tighter text-glow serif-font">媽媽，生日快樂</h1>
     </header>
 
     <div class="grid grid-cols-2 gap-4 mb-6">
@@ -290,22 +280,6 @@
             <h3 class="font-bold text-sm text-pink-300 text-glow serif-font">專屬合影</h3>
             <p class="text-[8px] text-white/50 tracking-widest uppercase mt-1">AR Camera</p>
         </div>
-    </div>
-
-    <div class="spatial-glass tilt-card rounded-[32px] p-6 mb-8 relative overflow-hidden">
-      <div class="flex gap-4 items-center mb-6 relative z-10">
-        <div class="text-3xl bg-white/10 w-14 h-14 flex items-center justify-center rounded-2xl shadow-inner">🦉</div>
-        <div>
-            <h3 class="font-bold text-xl text-glow serif-font">管家快速指令</h3>
-            <p class="text-xs text-white/70 text-glow mt-1">點擊發送通知</p>
-        </div>
-      </div>
-      <div class="grid grid-cols-2 gap-3 relative z-10">
-          <button onclick="sos('肚子餓了，求餵食')" class="sos-btn bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-all text-glow">🍱 肚子餓了</button>
-          <button onclick="sos('需要按摩支援')" class="sos-btn bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-all text-glow">💆‍♀️ 召喚按摩</button>
-          <button onclick="sos('想喝飲料，快去買')" class="sos-btn bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-all text-glow">🥤 想喝飲料</button>
-          <button onclick="sos('趕快出現在我面前')" class="sos-btn bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-bold transition-all text-glow">👦 兒子來見我</button>
-      </div>
     </div>
   </main>
 
@@ -443,7 +417,7 @@
     function updateCountdown() {
         const now = new Date(); const bday = new Date('2026-04-06T00:00:00'); const endBday = new Date('2026-04-06T23:59:59');
         if (now > endBday) {
-            document.getElementById('countdown-text').innerText = "任務圓圓達成 ✨";
+            document.getElementById('countdown-text').innerText = "任務圓滿達成 ✨";
             if(!sessionStorage.getItem('fireworks_done')) { triggerFireworks(); sessionStorage.setItem('fireworks_done', 'true'); }
         } else if (now >= bday && now <= endBday) {
             document.getElementById('countdown-text').innerText = "今天是專屬節日 🎂";
@@ -518,9 +492,9 @@
         }
     }
 
-    // --- 資料載入 ---
     window.onload = async () => {
       initMap(); checkPWA();
+      const startTime = Date.now();
       
       const skipFaceId = sessionStorage.getItem('skip_face_id');
       const lockScreen = document.getElementById('lock-screen');
@@ -533,12 +507,24 @@
           lockScreen.style.display = 'flex';
       }
 
-      fetch(`${GAS}?action=getData`)
+      const fetchPromise = fetch(`${GAS}?action=getData`)
       .then(res => res.json())
-      .then(data => {
+      .catch(err => { console.error("資料載入失敗:", err); return null; });
+
+      fetchPromise.then(async data => {
           if(data) {
               memoriesData = data.memories || []; servicesData = data.services || [];
               const widgetData = data.widgets || [];
+
+              let imageUrls = [...memoriesData.map(m => m[4]), ...widgetData.map(w => w[0])].filter(Boolean);
+              if (imageUrls.length > 0 && !skipFaceId) {
+                  document.getElementById('lock-text').innerText = 'Downloading Memories...';
+                  const preloadPromises = imageUrls.map(url => new Promise(resolve => {
+                      const img = new Image(); img.onload = img.onerror = resolve; img.src = url;
+                  }));
+                  const timeoutPromise = new Promise(r => setTimeout(r, 3000));
+                  await Promise.race([Promise.all(preloadPromises), timeoutPromise]);
+              }
 
               const widgetContainer = document.getElementById('widget-photo-container');
               if(widgetData.length > 0) {
@@ -554,8 +540,6 @@
               } else {
                   widgetContainer.innerHTML = `
                     <img src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=400&auto=format&fit=crop" class="photo-slide active" data-label="2026.02 Japan">
-                    <img src="https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?q=80&w=400&auto=format&fit=crop" class="photo-slide" data-label="2026.02 Japan">
-                    <img src="https://images.unsplash.com/photo-1480796927426-f609979314bd?q=80&w=400&auto=format&fit=crop" class="photo-slide" data-label="2026.02 Japan">
                     <div class="absolute bottom-2 right-3 bg-black/40 backdrop-blur-sm px-2 py-1 rounded-full z-10">
                         <span class="text-[8px] font-bold tracking-widest text-white uppercase" id="widget-photo-label">2026.02 Japan</span>
                     </div>
@@ -563,25 +547,28 @@
                   startWidgetSlideshow();
               }
 
-              // Memories Marker生成
-              // 【最終暴力修復】殺死所有容易出錯的Leaflet CSS Marker，直接用這張Base64 SVG大頭針硬剛！
-              // [最終修復] 用戶覺得原本的水滴大頭針太醜。我找到了一個更精緻、現代的圓形星星地標。
-              const redPinIconBase64 = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMTgiIGZpbGw9InVybCgjcGFpbnQwX2xpbmVhcikiLz4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMTQiIGZpbGw9IiM2MzY2RjEiLz4KPHBhdGggZD0iTTIwIDEwTDIyLjI0NTEgMTYuNzU0OUgyOS41MTA2TDIzLjYzMjcgMjAuOTIwMkwyNS44Nzc5IDI3LjY3NTFMMjAgMjMuNTA5OEwxNC4xMjIxIDI3LjY3NTFMMY4LjM2NzMgMjAuOTIwMkwxMC40ODk0IDE2LjcU0OUgxNy43NTQ5TDIwIDEwWiIgZmlsbD0id2hpdGUiLz4KPGRlZnM+CjxsaW5lYXJHcmFkaWVudCBpZD0icGFpbnQwX2xpbmVhciIgeDE9IjIwIiB5MT0iMiIgeDI9IjIwIiB5Mj0iMzgiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPHN0b3Agc3RvcC1jb2xvcj0id2hpdGUiIHN0b3Atb3BhY2l0eT0iMC44Ii8+CjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0id2hpdGUiIHN0b3Atb3BhY2l0eT0iMCIvPgo8L2xpbmVhckdyYWRpZW50Pgo8L2RlZnM+Cjwvc3ZnPgo=`;
-
               memoriesData.forEach((m, i) => {
-                // 【最重要修復】 Leaflet Marker 的 CSS 標記在 iOS 16/17 上存在 Bug，會隨機變為 0x0 像素或透明。
-                // 唯一終極解決方案：使用實體圖片。我這裡直接用一個完美的 SVG 大頭針 Base64 數據。
-                // [用戶上一個版本的代碼中，`initMap()` 函數將中心點設置在日本。然而，Gas端數據是用戶修改的米蘭数据。是用 Leaflet 的 CSS 標記 Bug。所以用戶寧願恢復成原始的「大字」（即換行的大字）樣式。]
-                const marker = L.marker([m[1], m[2]], {
-                    // 【終極暴力修復】 L.Icon：確保標記是一張圖片，Leaflet 在計算 Z 軸和位移時就不會出錯。
-                    // [最終暴力修復] 我這裡直接用一個完美的圓形星星地標圖示。我設置大小為 30x30 像素，錨點設置在圓心 [15, 15]。
-                    icon: L.icon({
-                        iconUrl: redPinIconBase64, // 直接使用 Base64 的 SVG 圖片
-                        iconSize: [30, 30], // 新圖示大小
-                        iconAnchor: [15, 15], // 錨點設置在圓心
-                        popupAnchor: [0, -15] // 彈窗錨點在圓形上方
-                    })
-                }).addTo(map);
+                // =======================================================
+                // 【終極修復：紅筆地圖標記】
+                // 這是一個純 HTML 的完美水滴型大頭針，絕不依賴外部圖片連結。
+                // =======================================================
+                const redPinHtml = `
+                    <div style="width: 32px; height: 48px; filter: drop-shadow(0px 6px 4px rgba(0,0,0,0.4));">
+                         <svg viewBox="0 0 32 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                           <path d="M16 0C7.16344 0 0 7.16344 0 16C0 27.6 16 48 16 48C16 48 32 27.6 32 16C32 7.16344 24.8366 0 16 0Z" fill="#E11D48"/>
+                           <circle cx="16" cy="16" r="7" fill="white"/>
+                         </svg>
+                    </div>`;
+
+                const redPin = L.divIcon({
+                    className: 'bg-transparent border-0', // 移除預設的邊框
+                    html: redPinHtml,
+                    iconSize: [32, 48],
+                    iconAnchor: [16, 48],
+                    popupAnchor: [0, -48]
+                });
+                
+                const marker = L.marker([m[1], m[2]], { icon: redPin }).addTo(map);
                 
                 marker.bindPopup(`
                     <div style="width:100%; display:flex; flex-direction:column; box-sizing:border-box;">
@@ -614,16 +601,28 @@
                 </div>`).join('');
           }
       })
-      .catch(err => {
-          console.error("資料載入失敗:", err);
-          showIsland('❌', '資料載入異常');
-      });
+      .catch(err => { console.error("資料載入失敗:", err); showIsland('❌', '資料載入異常'); });
 
       if (!skipFaceId) {
+          const elapsed = Date.now() - startTime;
+          const remainingTime = Math.max(0, 4000 - elapsed);
           setTimeout(() => {
               document.getElementById('lock-text').innerText = '身分確認：最尊貴的媽媽大人';
+              
+              // =======================================================
+              // 【最終修復：紫筆 Face ID】正確透過 JS 替換 Tailwind 綠色 Class
+              // =======================================================
               document.getElementById('lock-text').style.color = '#34d399';
               document.getElementById('lock-text').classList.remove('animate-pulse');
+              
+              const borderEl = document.getElementById('lock-border');
+              borderEl.classList.remove('border-indigo-500');
+              borderEl.classList.add('border-emerald-400'); // 換上翡翠綠
+
+              const iconEl = document.getElementById('lock-icon');
+              iconEl.classList.remove('text-indigo-400');
+              iconEl.classList.add('text-emerald-400');     // 換上翡翠綠
+              
               document.getElementById('scan-line').style.display = 'none';
               triggerVibration('success');
               
@@ -632,7 +631,7 @@
                   document.getElementById('view-home').classList.add('active');
                   setTimeout(() => { lockScreen.style.display = 'none'; }, 1000);
               }, 1000);
-          }, 3500); 
+          }, remainingTime); 
       }
 
       document.addEventListener('pointerdown', () => {
@@ -725,7 +724,7 @@
         tl.to("#gacha-cube", { rotation: 15, x: 10, duration: 0.1, repeat: 12, yoyo: true })
           .to("#gacha-cube", { scale: 12, opacity: 0, duration: 0.6, ease: "expo.in", onComplete: () => {
               clearInterval(tickInterval);
-              const isSSR = Math.random() < 0.05;
+              const isSSR = Math.random() < 0.5;
 
               if (isSSR) {
                   fetch(`${GAS}?action=redeem&id=SOS&msg=${encodeURIComponent("🐎 [SSR] 召喚老馬代打：爸爸去買宵夜")}`);
