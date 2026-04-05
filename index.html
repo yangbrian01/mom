@@ -117,7 +117,7 @@
 
     .music-bar { width: 4px; background: white; border-radius: 2px; transition: height 0.1s ease-in-out; display: inline-block; margin: 0 2px; }
 
-    #leaflet-map { width: 100%; height: calc(100vh - 180px); border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 10; border: 1px solid rgba(255,255,255,0.2); }
+    #leaflet-map { width: 100%; height: calc(100vh - 180px); border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 10; border: 1px solid rgba(255,255,255,0.2); -webkit-mask-image: -webkit-radial-gradient(white, black); }
     .leaflet-popup-content-wrapper { border-radius: 20px !important; padding: 0 !important; background: rgba(255,255,255,0.95) !important; backdrop-filter: blur(10px) !important; overflow: hidden !important; box-shadow: 0 15px 35px rgba(0,0,0,0.3) !important; }
     .leaflet-popup-content { margin: 0 !important; width: 260px !important; max-width: 260px !important; line-height: normal !important; }
     .leaflet-container a.leaflet-popup-close-button { color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,0.8); top: 12px !important; right: 12px !important; z-index: 20; }
@@ -307,8 +307,8 @@
     <div class="dock-btn" id="tab-wallet" onclick="switchTab('wallet')">🎫</div>
   </nav>
 
-  <audio id="bgm" src="solo.mp3" loop preload="auto" crossorigin="anonymous"></audio>
-  <audio id="map-bgm" src="spirited.mp3" loop preload="auto" crossorigin="anonymous"></audio>
+  <audio id="bgm" src="solo.MP3" loop preload="auto" crossorigin="anonymous"></audio>
+  <audio id="map-bgm" src="spirited.MP3" loop preload="auto" crossorigin="anonymous"></audio>
 
   <script>
     const GAS = 'https://script.google.com/macros/s/AKfycbxxknkKwWS-Vtqo3pKovAMstLtQrXeyD7DhnILzeeisIBCGHmh03zFjFAdmF47ZXtv_/exec'; 
@@ -316,10 +316,6 @@
     let audio = document.getElementById('bgm'), mapAudio = document.getElementById('map-bgm');
     let isGachaRunning = false, isRequesting = false, isTouring = false;
 
-    // =======================================================
-    // 【核武級修復】Web Audio API 音量控制核心
-    // 用於徹底繞過 iOS Safari 對 audio.volume 的封鎖
-    // =======================================================
     let audioCtx, bgmGain, mapBgmGain, audioInitialized = false;
 
     function initAudioEngine() {
@@ -328,25 +324,22 @@
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             audioCtx = new AudioContext();
 
-            // 攔截獨奏音軌
             const source1 = audioCtx.createMediaElementSource(audio);
             bgmGain = audioCtx.createGain();
-            bgmGain.gain.value = 0; // 預設無聲
+            bgmGain.gain.value = 0; 
             source1.connect(bgmGain).connect(audioCtx.destination);
 
-            // 攔截地圖音軌
             const source2 = audioCtx.createMediaElementSource(mapAudio);
             mapBgmGain = audioCtx.createGain();
-            mapBgmGain.gain.value = 0; // 預設無聲
+            mapBgmGain.gain.value = 0; 
             source2.connect(mapBgmGain).connect(audioCtx.destination);
             
             audioInitialized = true;
         } catch(e) {
-            console.log("Web Audio API 初始化失敗，可能因為跨網域或瀏覽器限制:", e);
+            console.log("Web Audio API 初始化失敗:", e);
         }
     }
 
-    // --- 自動音樂頻譜跳動 ---
     setInterval(() => {
         if (!audio.paused && currentTabIdx === 0 && bgmGain && bgmGain.gain.value > 0.1) {
             document.querySelectorAll('.music-bar').forEach(b => b.style.height = (Math.random()*24 + 4) + 'px');
@@ -404,22 +397,13 @@
             isTouring = false;
         }
 
-        // =======================================================
-        // 【混音器控制】保證 iOS 上完美 5 秒淡出 / 3 秒淡入
-        // =======================================================
         if(id === 'home') {
-            // 切回首頁：地圖音樂 5 秒淡出
             if(!mapAudio.paused && mapBgmGain) gsap.to(mapBgmGain.gain, { value: 0, duration: 5, overwrite: "auto", onComplete: () => mapAudio.pause() });
-            
-            // 獨奏 3 秒淡入
             if(audio.paused) audio.play().catch(()=>{});
             if(bgmGain) gsap.to(bgmGain.gain, { value: 1, duration: 3, overwrite: "auto" });
-            
         } else if (id === 'map') {
-            // 切到地圖：首頁獨奏 5 秒淡出 (地圖音樂等按導覽才播)
             if(!audio.paused && bgmGain) gsap.to(bgmGain.gain, { value: 0, duration: 5, overwrite: "auto", onComplete: () => audio.pause() });
         } else {
-            // 切到票夾：所有音樂 5 秒淡出
             if(!audio.paused && bgmGain) gsap.to(bgmGain.gain, { value: 0, duration: 5, overwrite: "auto", onComplete: () => audio.pause() });
             if(!mapAudio.paused && mapBgmGain) gsap.to(mapBgmGain.gain, { value: 0, duration: 5, overwrite: "auto", onComplete: () => mapAudio.pause() });
         }
@@ -543,7 +527,6 @@
         }
     }
 
-    // --- 背景音樂啟動器 ---
     function startBackgroundMusic() {
         initAudioEngine();
         if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
@@ -556,7 +539,6 @@
                     gsap.to(bgmGain.gain, { value: 1, duration: 3, overwrite: "auto" });
                 }
             }).catch(error => {
-                // 如果被 iOS 擋住自動播放，等媽媽隨便點螢幕一下解鎖
                 document.addEventListener('pointerdown', function onFirstTouch() {
                     if (currentTabIdx === 0) {
                         initAudioEngine();
@@ -573,7 +555,6 @@
         }
     }
 
-    // --- 資料載入 ---
     window.onload = async () => {
       initMap(); checkPWA();
       const startTime = Date.now();
@@ -585,7 +566,6 @@
           sessionStorage.removeItem('skip_face_id');
           lockScreen.style.display = 'none';
           document.getElementById('view-home').classList.add('active');
-          // 已解鎖過，直接淡入音樂
           startBackgroundMusic();
       } else {
           lockScreen.style.display = 'flex';
@@ -630,6 +610,8 @@
               }
 
               memoriesData.forEach((m, i) => {
+                // 【終極修復：拔除 className: 'marker-drop'】
+                // 這是導致在 iOS 點擊地圖時大頭針飛走的真正元兇！
                 const redPinIconBase64 = `data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 384 512' width='32' height='42'%3E%3Cpath fill='%23F43F5E' d='M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z'/%3E%3Ccircle cx='192' cy='192' r='80' fill='%23ffffff'/%3E%3C/svg%3E`;
 
                 const marker = L.marker([m[1], m[2]], {
@@ -639,6 +621,7 @@
                         iconSize: [32, 42],
                         iconAnchor: [16, 42],
                         popupAnchor: [0, -42]
+                        // 絕對不能加 className: 'marker-drop'，不然 iOS 的 transform 會爆炸！
                     })
                 }).addTo(map);
                 
@@ -699,7 +682,6 @@
                   lockScreen.style.opacity = '0';
                   document.getElementById('view-home').classList.add('active');
                   
-                  // Face ID 驗證通過，播放 3 秒淡入音樂
                   startBackgroundMusic();
 
                   setTimeout(() => { lockScreen.style.display = 'none'; }, 1000);
@@ -707,11 +689,7 @@
           }, remainingTime); 
       }
 
-      // iOS 需要觸控來解鎖 Audio Context
       document.addEventListener('pointerdown', () => {
-          initAudioEngine();
-          if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-          
           if(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission !== 'function') {
               window.addEventListener('deviceorientation', (e) => {
                   if(!e.gamma || !e.beta) return;
@@ -791,17 +769,12 @@
       } catch(e) { alert('連線超時'); btnEl.innerText = originalText; if(pass) gsap.to(pass, { '--scale': 1, opacity: 1 }); } finally { isRequesting = false; }
     }
 
-    // =======================================================
-    // 【地圖音樂控制】3秒淡入，5秒淡出
-    // =======================================================
     async function startMapTour() {
         if(isTouring) return;
         isTouring = true; triggerVibration('light');
         
-        // 獨奏 5 秒淡出
         if(!audio.paused && bgmGain) gsap.to(bgmGain.gain, { value: 0, duration: 5, overwrite: "auto", onComplete: () => audio.pause() });
         
-        // 千與千尋 3 秒淡入
         if(mapAudio.paused) {
             mapAudio.play().catch(()=>{}); 
         }
@@ -821,7 +794,6 @@
         }
         
         isTouring = false; 
-        // 導覽結束：千與千尋 5 秒淡出
         if(mapBgmGain) gsap.to(mapBgmGain.gain, { value: 0, duration: 5, overwrite: "auto", onComplete: () => mapAudio.pause() });
     }
 
