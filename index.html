@@ -43,7 +43,7 @@
     .aurora-spirited {
       position: absolute; inset: 0; transform: translate3d(0,0,0); opacity: 0;
       background: radial-gradient(circle at 50% 50%, rgba(153, 27, 27, 0.8) 0%, transparent 40%),
-                  radial-gradient(circle at 80% 20%, rgba(251, 191, 36, 0.6) 0%, transparent 40%),
+                  radial-gradient(circle at 80% 20%, rgba(244, 63, 94, 0.6) 0%, transparent 40%),
                   radial-gradient(circle at 20% 80%, rgba(190, 18, 60, 0.7) 0%, transparent 40%);
       filter: blur(60px) saturate(150%); animation: aurora 25s linear infinite alternate-reverse; transition: opacity 1.5s ease-in-out;
     }
@@ -62,7 +62,7 @@
       background: var(--glass-bg); backdrop-filter: blur(25px) saturate(180%); -webkit-backdrop-filter: blur(25px) saturate(180%);
       border: 1px solid var(--glass-border); box-shadow: 0 20px 40px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.2);
       -webkit-backface-visibility: hidden; backface-visibility: hidden; transform: translate3d(0,0,0);
-      -webkit-mask-image: -webkit-radial-gradient(white, black); 
+      -webkit-mask-image: -webkit-radial-gradient(white, black);
     }
     .spatial-glass::after {
       content: ''; position: absolute; inset: -150%;
@@ -115,7 +115,7 @@
     .dock-btn { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; transition: all 0.3s; color: rgba(255,255,255,0.6); }
     .dock-btn.active { background: rgba(255,255,255,0.2); color: #fff; transform: scale(1.1); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
 
-    .music-bar { width: 4px; background: white; border-radius: 2px; transition: height 0.1s; display: inline-block; margin: 0 2px; }
+    .music-bar { width: 4px; background: white; border-radius: 2px; transition: height 0.1s ease-in-out; display: inline-block; margin: 0 2px; }
 
     #leaflet-map { width: 100%; height: calc(100vh - 180px); border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 10; border: 1px solid rgba(255,255,255,0.2); transform: translate3d(0,0,0); -webkit-mask-image: -webkit-radial-gradient(white, black); }
     .leaflet-popup-content-wrapper { border-radius: 20px !important; padding: 0 !important; background: rgba(255,255,255,0.95) !important; backdrop-filter: blur(10px) !important; overflow: hidden !important; box-shadow: 0 15px 35px rgba(0,0,0,0.3) !important; }
@@ -228,7 +228,7 @@
             </div>
         </div>
         
-        <div class="spatial-glass tilt-card photo-widget shadow-lg shadow-black/20 cursor-pointer" onclick="triggerVibration('light'); switchTab('map')" id="widget-photo-container">
+        <div class="spatial-glass tilt-card photo-widget shadow-lg shadow-black/20" id="widget-photo-container">
             <div class="absolute inset-0 flex items-center justify-center text-white/50 text-xs">載入中...</div>
         </div>
     </div>
@@ -259,8 +259,8 @@
       </div>
       <div class="h-px w-full bg-white/10 my-4 relative z-10"></div>
       <div class="flex justify-between items-center relative z-10">
-          <p id="motion-status" class="text-xs font-bold tracking-widest text-orange-300 uppercase text-glow">長按解鎖密函 / 點擊揮動指揮</p>
-          <p class="text-[10px] text-white/50 italic text-glow">Conducted by Your Son</p>
+          <p id="motion-status" class="text-xs font-bold tracking-widest text-emerald-300 uppercase text-glow">長按解鎖密函 / 沉浸式專屬配樂</p>
+          <p class="text-[10px] text-white/50 italic text-glow">Performed by Your Son</p>
       </div>
     </div>
 
@@ -314,7 +314,16 @@
     const GAS = 'https://script.google.com/macros/s/AKfycbxxknkKwWS-Vtqo3pKovAMstLtQrXeyD7DhnILzeeisIBCGHmh03zFjFAdmF47ZXtv_/exec'; 
     let map, mapMarkers = [], memoriesData = [], servicesData = []; 
     let audio = document.getElementById('bgm'), mapAudio = document.getElementById('map-bgm');
-    let isGachaRunning = false, isRequesting = false, isTouring = false, hasUnlockedAudio = false;
+    let isGachaRunning = false, isRequesting = false, isTouring = false;
+
+    // --- 自動音樂波浪特效 ---
+    setInterval(() => {
+        if (!audio.paused && currentTabIdx === 0) {
+            document.querySelectorAll('.music-bar').forEach(b => b.style.height = (Math.random()*24 + 4) + 'px');
+        } else {
+            document.querySelectorAll('.music-bar').forEach(b => b.style.height = '4px');
+        }
+    }, 150);
 
     function checkPWA() {
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
@@ -365,8 +374,20 @@
             isTouring = false;
         }
 
-        if(id !== 'home' && !audio.paused) gsap.to(audio, { volume: 0, duration: 0.8, onComplete: () => audio.pause() });
-        if(id !== 'map' && !mapAudio.paused) gsap.to(mapAudio, { volume: 0, duration: 1, onComplete: () => mapAudio.pause() });
+        // --- 音樂安全切換 ---
+        if(id === 'home') {
+            if(audio.paused) {
+                audio.volume = 0;
+                audio.play().catch(()=>{});
+                gsap.to(audio, { volume: 1, duration: 1.5 });
+            }
+            if(!mapAudio.paused) gsap.to(mapAudio, { volume: 0, duration: 1, onComplete: () => mapAudio.pause() });
+        } else if (id === 'map') {
+            if(!audio.paused) gsap.to(audio, { volume: 0, duration: 1, onComplete: () => audio.pause() });
+        } else {
+            if(!audio.paused) gsap.to(audio, { volume: 0, duration: 1, onComplete: () => audio.pause() });
+            if(!mapAudio.paused) gsap.to(mapAudio, { volume: 0, duration: 1, onComplete: () => mapAudio.pause() });
+        }
     }
 
     function startWidgetSlideshow() {
@@ -464,10 +485,10 @@
     function cancelPress() { clearTimeout(pressTimer); gsap.to(musicCard, { '--scale': 1, duration: 0.2 }); }
 
     musicCard.addEventListener('touchstart', startPress, {passive: false});
-    musicCard.addEventListener('touchend', () => { cancelPress(); requestMotionPermission(); }); 
+    musicCard.addEventListener('touchend', cancelPress); 
     musicCard.addEventListener('touchmove', cancelPress);
     musicCard.addEventListener('mousedown', startPress);
-    musicCard.addEventListener('mouseup', () => { cancelPress(); requestMotionPermission(); });
+    musicCard.addEventListener('mouseup', cancelPress);
     musicCard.addEventListener('mouseleave', cancelPress);
 
     function closeSecretLetter() { gsap.to('#secret-letter-content', {y: 50, opacity: 0, duration: 0.4, onComplete: () => { document.getElementById('secret-letter-modal').style.display = 'none'; }}); }
@@ -487,6 +508,27 @@
         }
     }
 
+    // --- 自動播放優雅淡入邏輯 ---
+    function startBackgroundMusic() {
+        audio.volume = 0;
+        let playPromise = audio.play();
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                // 自動播放成功，3秒優雅淡入
+                gsap.to(audio, { volume: 1, duration: 3 });
+            }).catch(error => {
+                // Apple 擋了自動播放！等待媽媽點擊任何地方解鎖
+                console.log("iOS prevented autoplay. Waiting for first touch...");
+                document.addEventListener('pointerdown', function onFirstTouch() {
+                    audio.volume = 0;
+                    audio.play();
+                    gsap.to(audio, { volume: 1, duration: 2 });
+                    document.removeEventListener('pointerdown', onFirstTouch);
+                }, { once: true });
+            });
+        }
+    }
+
     window.onload = async () => {
       initMap(); checkPWA();
       const startTime = Date.now();
@@ -498,6 +540,8 @@
           sessionStorage.removeItem('skip_face_id');
           lockScreen.style.display = 'none';
           document.getElementById('view-home').classList.add('active');
+          // 已經解鎖過了，重新整理直接嘗試播放
+          startBackgroundMusic();
       } else {
           lockScreen.style.display = 'flex';
       }
@@ -610,22 +654,14 @@
               setTimeout(() => {
                   lockScreen.style.opacity = '0';
                   document.getElementById('view-home').classList.add('active');
+                  // 解鎖動畫結束，直接開始播放音樂！
+                  startBackgroundMusic();
                   setTimeout(() => { lockScreen.style.display = 'none'; }, 1000);
               }, 1000);
           }, remainingTime); 
       }
 
       document.addEventListener('pointerdown', () => {
-          if(!hasUnlockedAudio) { 
-              // 【修復】確保音樂只觸發解鎖，不跟著點擊重疊播放
-              // 我們加上 currentTabIdx 判斷，避免重疊
-              // 但這裡 pointerdown 只是用來解鎖 AudioContext
-              // 修改在 startConductorEngine
-              audio.play().then(() => audio.pause()).catch(()=>{}); 
-              mapAudio.play().then(() => mapAudio.pause()).catch(()=>{}); 
-              hasUnlockedAudio = true; 
-          }
-          
           if(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission !== 'function') {
               window.addEventListener('deviceorientation', (e) => {
                   if(!e.gamma || !e.beta) return;
@@ -638,57 +674,6 @@
           }
       }, { once: true });
     };
-
-    async function sendWish() {
-        const input = document.getElementById('wish-input'); const wish = input.value.trim();
-        if(!wish) return alert('請輸入願望！');
-        if(isRequesting) return;
-        isRequesting = true; showIsland('⏳', '願望發射中...');
-        try { await fetch(`${GAS}?action=redeem&id=SOS&msg=${encodeURIComponent("🌟 [皇家許願池] " + wish)}`); showIsland('✨', '願望已傳達！'); triggerConfetti(); input.value = ''; } 
-        catch(e) { showIsland('❌', '傳送失敗'); } finally { isRequesting = false; }
-    }
-
-    let targetRate = 0, currentRate = 0; let lastX = 0, lastY = 0;
-    function requestMotionPermission() {
-        if(pressTimer) return;
-        triggerVibration('light'); 
-        audio.play().then(() => audio.pause()).catch(()=>{});
-        
-        const reqMotion = (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') ? DeviceMotionEvent.requestPermission() : Promise.resolve('granted');
-        const reqOrientation = (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') ? DeviceOrientationEvent.requestPermission() : Promise.resolve('granted');
-        
-        Promise.all([reqMotion, reqOrientation]).then(states => {
-            if (states.every(s => s === 'granted')) {
-                document.getElementById('motion-status').innerText = "指揮家模式啟動：揮動控制節奏";
-                startConductorEngine();
-            }
-        }).catch(console.error);
-    }
-
-    function startConductorEngine() {
-        window.addEventListener('devicemotion', (e) => {
-            let acc = e.accelerationIncludingGravity; if(!acc) return;
-            let delta = Math.abs(acc.x - lastX) + Math.abs(acc.y - lastY);
-            // 【終極防護】只有在首頁 (currentTabIdx === 0) 才會觸發獨奏，避免和地圖音樂打架
-            if (delta > 5 && currentTabIdx === 0) { 
-                targetRate = Math.min(1.5, 0.5 + (delta / 20)); 
-                if (audio.paused) { audio.volume = 1; audio.play(); }
-                document.querySelectorAll('.music-bar').forEach(b => b.style.height = (Math.random()*24 + 4) + 'px');
-            }
-            lastX = acc.x; lastY = acc.y;
-        });
-
-        function updatePlayback() {
-            if (!audio.paused) {
-                currentRate += (targetRate - currentRate) * 0.1;
-                if (currentRate < 0.15) { audio.pause(); targetRate = 0; document.querySelectorAll('.music-bar').forEach(b => b.style.height = '4px'); } 
-                else { audio.playbackRate = Math.max(0.1, currentRate); }
-                targetRate *= 0.94; 
-            }
-            requestAnimationFrame(updatePlayback);
-        }
-        updatePlayback();
-    }
 
     function startGacha() {
         if (isGachaRunning) return;
@@ -708,7 +693,7 @@
 
               if (isSSR) {
                   fetch(`${GAS}?action=redeem&id=SOS&msg=${encodeURIComponent("🐎 [SSR] 召喚老馬代打：爸爸去買宵夜")}`);
-                  document.getElementById('gacha-result').innerHTML = "✨ SSR 極稀有 ✨<br>🐎 召喚爸爸代打";
+                  document.getElementById('gacha-result').innerHTML = "✨ SSR 極稀有 ✨<br>🐎 召喚老馬代打";
                   document.getElementById('gacha-result').classList.add('ssr-glow');
                   document.getElementById('gacha-actions').innerHTML = `<button onclick="keepGacha()" class="w-full py-3 bg-yellow-500 text-black rounded-full font-bold shadow-lg">驚喜收下</button>`;
                   triggerVibration('ssr');
