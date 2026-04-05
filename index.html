@@ -62,7 +62,7 @@
       background: var(--glass-bg); backdrop-filter: blur(25px) saturate(180%); -webkit-backdrop-filter: blur(25px) saturate(180%);
       border: 1px solid var(--glass-border); box-shadow: 0 20px 40px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.2);
       -webkit-backface-visibility: hidden; backface-visibility: hidden; transform: translate3d(0,0,0);
-      -webkit-mask-image: -webkit-radial-gradient(white, black); 
+      -webkit-mask-image: -webkit-radial-gradient(white, black);
     }
     .spatial-glass::after {
       content: ''; position: absolute; inset: -150%;
@@ -117,7 +117,7 @@
 
     .music-bar { width: 4px; background: white; border-radius: 2px; transition: height 0.1s ease-in-out; display: inline-block; margin: 0 2px; }
 
-    #leaflet-map { width: 100%; height: calc(100vh - 180px); border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 10; border: 1px solid rgba(255,255,255,0.2); -webkit-mask-image: -webkit-radial-gradient(white, black); }
+    #leaflet-map { width: 100%; height: calc(100vh - 180px); border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 10; border: 1px solid rgba(255,255,255,0.2); }
     .leaflet-popup-content-wrapper { border-radius: 20px !important; padding: 0 !important; background: rgba(255,255,255,0.95) !important; backdrop-filter: blur(10px) !important; overflow: hidden !important; box-shadow: 0 15px 35px rgba(0,0,0,0.3) !important; }
     .leaflet-popup-content { margin: 0 !important; width: 260px !important; max-width: 260px !important; line-height: normal !important; }
     .leaflet-container a.leaflet-popup-close-button { color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,0.8); top: 12px !important; right: 12px !important; z-index: 20; }
@@ -307,8 +307,8 @@
     <div class="dock-btn" id="tab-wallet" onclick="switchTab('wallet')">🎫</div>
   </nav>
 
-  <audio id="bgm" src="solo.MP3" loop preload="auto" crossorigin="anonymous"></audio>
-  <audio id="map-bgm" src="spirited.MP3" loop preload="auto" crossorigin="anonymous"></audio>
+  <audio id="bgm" src="solo.MP3" loop preload="auto"></audio>
+  <audio id="map-bgm" src="spirited.MP3" loop preload="auto"></audio>
 
   <script>
     const GAS = 'https://script.google.com/macros/s/AKfycbxxknkKwWS-Vtqo3pKovAMstLtQrXeyD7DhnILzeeisIBCGHmh03zFjFAdmF47ZXtv_/exec'; 
@@ -316,30 +316,36 @@
     let audio = document.getElementById('bgm'), mapAudio = document.getElementById('map-bgm');
     let isGachaRunning = false, isRequesting = false, isTouring = false;
 
-    let audioCtx, bgmGain, mapBgmGain, audioInitialized = false;
+    // =======================================================
+    // 【終極音軌控制器】提早綁定，不依賴點擊，保證繞過 iOS 限制
+    // =======================================================
+    let audioCtx, bgmGain, mapBgmGain;
+    let isAudioSetup = false;
 
-    function initAudioEngine() {
-        if(audioInitialized) return;
+    function setupAudio() {
+        if (isAudioSetup) return;
         try {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             audioCtx = new AudioContext();
 
             const source1 = audioCtx.createMediaElementSource(audio);
             bgmGain = audioCtx.createGain();
-            bgmGain.gain.value = 0; 
+            bgmGain.gain.value = 0;
             source1.connect(bgmGain).connect(audioCtx.destination);
 
             const source2 = audioCtx.createMediaElementSource(mapAudio);
             mapBgmGain = audioCtx.createGain();
-            mapBgmGain.gain.value = 0; 
+            mapBgmGain.gain.value = 0;
             source2.connect(mapBgmGain).connect(audioCtx.destination);
-            
-            audioInitialized = true;
-        } catch(e) {
-            console.log("Web Audio API 初始化失敗:", e);
-        }
+
+            isAudioSetup = true;
+        } catch(e) { console.error("Audio Setup Failed", e); }
     }
 
+    // 網頁一載入就先把混音器架好
+    setupAudio();
+
+    // --- 自動音樂頻譜跳動 ---
     setInterval(() => {
         if (!audio.paused && currentTabIdx === 0 && bgmGain && bgmGain.gain.value > 0.1) {
             document.querySelectorAll('.music-bar').forEach(b => b.style.height = (Math.random()*24 + 4) + 'px');
@@ -397,10 +403,15 @@
             isTouring = false;
         }
 
+        // =======================================================
+        // 【混音器切換控制】完全依靠 Web Audio 的 Gain 節點做 3秒淡入 / 5秒淡出
+        // =======================================================
         if(id === 'home') {
             if(!mapAudio.paused && mapBgmGain) gsap.to(mapBgmGain.gain, { value: 0, duration: 5, overwrite: "auto", onComplete: () => mapAudio.pause() });
+            
             if(audio.paused) audio.play().catch(()=>{});
             if(bgmGain) gsap.to(bgmGain.gain, { value: 1, duration: 3, overwrite: "auto" });
+            
         } else if (id === 'map') {
             if(!audio.paused && bgmGain) gsap.to(bgmGain.gain, { value: 0, duration: 5, overwrite: "auto", onComplete: () => audio.pause() });
         } else {
@@ -527,33 +538,34 @@
         }
     }
 
-    function startBackgroundMusic() {
-        initAudioEngine();
+    // =======================================================
+    // 【雙重保險啟動器】Face ID 解鎖後，保證音樂一定能播放
+    // =======================================================
+    function startHomeMusic() {
         if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-        
-        let playPromise = audio.play();
-        if (playPromise !== undefined) {
-            playPromise.then(() => {
-                if(bgmGain) {
-                    bgmGain.gain.value = 0;
-                    gsap.to(bgmGain.gain, { value: 1, duration: 3, overwrite: "auto" });
-                }
-            }).catch(error => {
-                document.addEventListener('pointerdown', function onFirstTouch() {
-                    if (currentTabIdx === 0) {
-                        initAudioEngine();
-                        if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-                        audio.play();
-                        if(bgmGain) {
-                            bgmGain.gain.value = 0;
-                            gsap.to(bgmGain.gain, { value: 1, duration: 3, overwrite: "auto" });
-                        }
-                    }
-                    document.removeEventListener('pointerdown', onFirstTouch);
-                }, { once: true });
-            });
-        }
+        audio.play().then(() => {
+            if(bgmGain) {
+                gsap.to(bgmGain.gain, { value: 1, duration: 3, overwrite: "auto" });
+            } else {
+                // 若 Web Audio API 真的全死，至少有聲音
+                audio.volume = 1;
+            }
+        }).catch(err => {
+            console.log("Autoplay blocked by iOS.");
+        });
     }
+
+    // 全域監聽器：如果 iOS 系統太兇把自動播放擋下來，只要使用者碰到螢幕，音樂立刻強行喚醒！
+    document.body.addEventListener('pointerdown', () => {
+        if(audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        if (currentTabIdx === 0 && audio.paused) {
+            audio.play().then(() => {
+                if(bgmGain) gsap.to(bgmGain.gain, { value: 1, duration: 3, overwrite: "auto" });
+            }).catch(()=>{});
+        }
+    }, { passive: true });
 
     window.onload = async () => {
       initMap(); checkPWA();
@@ -566,7 +578,7 @@
           sessionStorage.removeItem('skip_face_id');
           lockScreen.style.display = 'none';
           document.getElementById('view-home').classList.add('active');
-          startBackgroundMusic();
+          startHomeMusic();
       } else {
           lockScreen.style.display = 'flex';
       }
@@ -610,8 +622,6 @@
               }
 
               memoriesData.forEach((m, i) => {
-                // 【終極修復：拔除 className: 'marker-drop'】
-                // 這是導致在 iOS 點擊地圖時大頭針飛走的真正元兇！
                 const redPinIconBase64 = `data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 384 512' width='32' height='42'%3E%3Cpath fill='%23F43F5E' d='M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z'/%3E%3Ccircle cx='192' cy='192' r='80' fill='%23ffffff'/%3E%3C/svg%3E`;
 
                 const marker = L.marker([m[1], m[2]], {
@@ -621,7 +631,6 @@
                         iconSize: [32, 42],
                         iconAnchor: [16, 42],
                         popupAnchor: [0, -42]
-                        // 絕對不能加 className: 'marker-drop'，不然 iOS 的 transform 會爆炸！
                     })
                 }).addTo(map);
                 
@@ -682,7 +691,7 @@
                   lockScreen.style.opacity = '0';
                   document.getElementById('view-home').classList.add('active');
                   
-                  startBackgroundMusic();
+                  startHomeMusic();
 
                   setTimeout(() => { lockScreen.style.display = 'none'; }, 1000);
               }, 1000);
@@ -730,7 +739,7 @@
 
               if (isSSR) {
                   fetch(`${GAS}?action=redeem&id=SOS&msg=${encodeURIComponent("🐎 [SSR] 召喚老馬代打：爸爸去買宵夜")}`);
-                  document.getElementById('gacha-result').innerHTML = "✨ SSR 極稀有 ✨<br>🐎 召喚爸爸代打";
+                  document.getElementById('gacha-result').innerHTML = "✨ SSR 極稀有 ✨<br>🐎 召喚老馬代打";
                   document.getElementById('gacha-result').classList.add('ssr-glow');
                   document.getElementById('gacha-actions').innerHTML = `<button onclick="keepGacha()" class="w-full py-3 bg-yellow-500 text-black rounded-full font-bold shadow-lg">驚喜收下</button>`;
                   triggerVibration('ssr');
