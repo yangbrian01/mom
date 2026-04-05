@@ -43,7 +43,7 @@
     .aurora-spirited {
       position: absolute; inset: 0; transform: translate3d(0,0,0); opacity: 0;
       background: radial-gradient(circle at 50% 50%, rgba(153, 27, 27, 0.8) 0%, transparent 40%),
-                  radial-gradient(circle at 80% 20%, rgba(244, 63, 94, 0.6) 0%, transparent 40%),
+                  radial-gradient(circle at 80% 20%, rgba(251, 191, 36, 0.6) 0%, transparent 40%),
                   radial-gradient(circle at 20% 80%, rgba(190, 18, 60, 0.7) 0%, transparent 40%);
       filter: blur(60px) saturate(150%); animation: aurora 25s linear infinite alternate-reverse; transition: opacity 1.5s ease-in-out;
     }
@@ -57,11 +57,15 @@
     }
     .tilt-card:active { --scale: 0.96; }
 
+    /* ======================================================= */
+    /* 【終極暴力修復】殺死 Safari 圓角外洩的核武器！ */
+    /* ======================================================= */
     .spatial-glass {
       position: relative; overflow: hidden;
       background: var(--glass-bg); backdrop-filter: blur(25px) saturate(180%); -webkit-backdrop-filter: blur(25px) saturate(180%);
       border: 1px solid var(--glass-border); box-shadow: 0 20px 40px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.2);
       -webkit-backface-visibility: hidden; backface-visibility: hidden; transform: translate3d(0,0,0);
+      -webkit-mask-image: -webkit-radial-gradient(white, black); /* 絕對不漏邊 */
     }
     .spatial-glass::after {
       content: ''; position: absolute; inset: -150%;
@@ -82,7 +86,7 @@
     .shine-effect { position: relative; overflow: hidden; }
     .shine-effect::before {
       content: ''; position: absolute; top: 0; left: -150%; width: 50%; height: 100%;
-      background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0) 100%);
+      background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
       transform: skewX(-25deg); animation: shine 4s infinite; z-index: 10; pointer-events: none;
     }
     @keyframes shine { 0% { left: -150%; } 20% { left: 200%; } 100% { left: 200%; } }
@@ -115,12 +119,8 @@
     .dock-btn.active { background: rgba(255,255,255,0.2); color: #fff; transform: scale(1.1); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
 
     .music-bar { width: 4px; background: white; border-radius: 2px; transition: height 0.1s; display: inline-block; margin: 0 2px; }
-    
-    /* 【終極修復 2】SVG 大頭針的掉落動畫 (使用原生 Image Tag，保證不消失) */
-    .marker-drop { animation: markerDrop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
-    @keyframes markerDrop { 0% { transform: translateY(-100px) scale(0); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
 
-    #leaflet-map { width: 100%; height: calc(100vh - 180px); border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 10; border: 1px solid rgba(255,255,255,0.2); transform: translate3d(0,0,0); }
+    #leaflet-map { width: 100%; height: calc(100vh - 180px); border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); z-index: 10; border: 1px solid rgba(255,255,255,0.2); transform: translate3d(0,0,0); -webkit-mask-image: -webkit-radial-gradient(white, black); }
     .leaflet-popup-content-wrapper { border-radius: 20px !important; padding: 0 !important; background: rgba(255,255,255,0.95) !important; backdrop-filter: blur(10px) !important; overflow: hidden !important; box-shadow: 0 15px 35px rgba(0,0,0,0.3) !important; }
     .leaflet-popup-content { margin: 0 !important; width: 260px !important; max-width: 260px !important; line-height: normal !important; }
     .leaflet-container a.leaflet-popup-close-button { color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,0.8); top: 12px !important; right: 12px !important; z-index: 20; }
@@ -158,7 +158,8 @@
         <div class="absolute inset-0 border-4 border-indigo-500 rounded-3xl opacity-30"></div>
         <div class="absolute inset-0 flex items-center justify-center text-indigo-400">
             <svg class="w-16 h-16 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><path d="M9 10h.01"></path><path d="M15 10h.01"></path><path d="M12 12v2"></path><path d="M10 16a3 3 0 0 0 4 0"></path>
+                <path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+                <path d="M9 10h.01"></path><path d="M15 10h.01"></path><path d="M12 12v2"></path><path d="M10 16a3 3 0 0 0 4 0"></path>
             </svg>
         </div>
         <div class="absolute top-0 left-0 w-full h-1 bg-indigo-400 shadow-[0_0_20px_#818cf8] animate-scan" id="scan-line"></div>
@@ -334,7 +335,6 @@
     let audio = document.getElementById('bgm'), mapAudio = document.getElementById('map-bgm');
     let isGachaRunning = false, isRequesting = false, isTouring = false, hasUnlockedAudio = false;
 
-    // --- PWA 引導 ---
     function checkPWA() {
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
         if (!isStandalone) {
@@ -345,7 +345,6 @@
         }
     }
 
-    // --- 全螢幕手勢切換 ---
     const tabs = ['home', 'map', 'wallet'];
     let currentTabIdx = 0, touchStartX = 0, touchStartY = 0;
 
@@ -389,7 +388,6 @@
         if(id !== 'map' && !mapAudio.paused) gsap.to(mapAudio, { volume: 0, duration: 1, onComplete: () => mapAudio.pause() });
     }
 
-    // --- 照片輪播 ---
     function startWidgetSlideshow() {
         setInterval(() => {
             const slides = document.querySelectorAll('.photo-slide');
@@ -454,7 +452,6 @@
       }());
     }
 
-    // --- 長按解鎖密函 ---
     let pressTimer; let isTyping = false;
     const musicCard = document.getElementById('music-card');
     const secretContent = "驚喜嗎？這是我特別藏的秘密功能。\n\n寫這個系統比以前做訂餐系統還要花心思，因為這是專屬妳的 2026 生日禮物。\n謝謝妳一直包容我，陪我準備報考北藝大，陪我去日本留下那麼多回憶。\n\n接下來的日子，也請多多指教！生日快樂！";
@@ -509,10 +506,9 @@
         }
     }
 
-    // --- 資料載入與背景預先載圖 (Image Preloader) ---
+    // --- 資料載入 ---
     window.onload = async () => {
       initMap(); checkPWA();
-      const startTime = Date.now(); // 記錄開始載入時間
       
       const skipFaceId = sessionStorage.getItem('skip_face_id');
       const lockScreen = document.getElementById('lock-screen');
@@ -525,38 +521,13 @@
           lockScreen.style.display = 'flex';
       }
 
-      // 開始向後端抓資料
-      const fetchPromise = fetch(`${GAS}?action=getData`)
+      fetch(`${GAS}?action=getData`)
       .then(res => res.json())
-      .catch(err => {
-          console.error("資料載入失敗:", err);
-          return null;
-      });
-
-      fetchPromise.then(async data => {
+      .then(data => {
           if(data) {
               memoriesData = data.memories || []; servicesData = data.services || [];
               const widgetData = data.widgets || [];
 
-              // 【終極修復 1】照片預載入 (Preloader)
-              // 蒐集所有需要載入的圖片網址 (地圖照片 + Widget照片)
-              let imageUrls = [...memoriesData.map(m => m[4]), ...widgetData.map(w => w[0])].filter(Boolean);
-              
-              if (imageUrls.length > 0 && !skipFaceId) {
-                  document.getElementById('lock-text').innerText = 'Downloading Memories...';
-                  // 創造預載入的 Promise 陣列
-                  const preloadPromises = imageUrls.map(url => new Promise(resolve => {
-                      const img = new Image();
-                      img.onload = img.onerror = resolve; // 載完或報錯都放行，避免死鎖
-                      img.src = url;
-                  }));
-                  
-                  // Promise.race：最多等 3 秒，避免網路太慢卡死在掃描畫面
-                  const timeoutPromise = new Promise(r => setTimeout(r, 3000));
-                  await Promise.race([Promise.all(preloadPromises), timeoutPromise]);
-              }
-
-              // 渲染 Widget
               const widgetContainer = document.getElementById('widget-photo-container');
               if(widgetData.length > 0) {
                   let widgetHtml = '';
@@ -580,25 +551,23 @@
                   startWidgetSlideshow();
               }
 
-              // 渲染地圖
               memoriesData.forEach((m, i) => {
-                // 【終極修復 2】SVG 大頭針 (絕不破圖、點擊不消失)
-                // 直接使用 Data URI 格式的 SVG 作為 iconUrl
-                const redPinSvg = `data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="30" height="45"><path fill="%23e11d48" stroke="%23ffffff" stroke-width="2" d="M12 2C6.48 2 2 6.48 2 12c0 7 10 21.5 10 21.5s10-14.5 10-21.5c0-5.52-4.48-10-10-10z"/><circle cx="12" cy="12" r="4" fill="%23ffffff"/></svg>`;
+                // 【終極修復 1】真正的純 Base64 SVG 大頭針，絕不依靠外部 CDN 也不會破圖
+                const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="30" height="45"><path fill="%23e11d48" stroke="%23ffffff" stroke-width="2" d="M12 2C6.48 2 2 6.48 2 12c0 7 10 21.5 10 21.5s10-14.5 10-21.5c0-5.52-4.48-10-10-10z"/><circle cx="12" cy="12" r="4" fill="%23ffffff"/></svg>`;
+                const dataUri = `data:image/svg+xml;charset=UTF-8,${svgString}`;
                 
                 const redPin = new L.Icon({
-                    iconUrl: redPinSvg,
-                    iconSize: [30, 45], iconAnchor: [15, 45], popupAnchor: [0, -35],
-                    className: 'marker-drop' // 套用掉落動畫
+                    iconUrl: dataUri,
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                    iconSize: [30, 45], iconAnchor: [15, 45], popupAnchor: [0, -40]
                 });
                 
                 const marker = L.marker([m[1], m[2]], { icon: redPin }).addTo(map);
                 
-                // 【完美修復 3】彈窗無白邊，底色換成優雅的深灰色 (#1f2937) 避免載入時死黑
                 marker.bindPopup(`
                     <div style="width:100%; display:flex; flex-direction:column; box-sizing:border-box;">
-                        <div style="position:relative; width:100%; height:200px; background:#1f2937;">
-                            <div style="position:absolute; inset:-20px; background-image:url('${m[4]}'); background-size:cover; background-position:center; filter:blur(15px); opacity:0.6; z-index:0;"></div>
+                        <div style="position:relative; width:100%; height:200px; background:#111;">
+                            <div style="position:absolute; inset:-20px; background-image:url('${m[4]}'); background-size:cover; background-position:center; filter:blur(15px); opacity:0.7; z-index:0;"></div>
                             <img src="${m[4]}" style="position:relative; z-index:1; width:100%; height:100%; object-fit:contain;">
                         </div>
                         <div style="padding: 12px 16px; background: rgba(255,255,255,0.95);">
@@ -625,28 +594,27 @@
                   </div>
                 </div>`).join('');
           }
-          
-          // --- Face ID 強制停留邏輯 ---
-          // 計算剛剛預載圖和抓資料花了多少時間，確保 Face ID 至少顯示 4 秒鐘
-          if (!skipFaceId) {
-              const elapsed = Date.now() - startTime;
-              const remainingTime = Math.max(0, 4000 - elapsed);
+      })
+      .catch(err => {
+          console.error("資料載入失敗:", err);
+          showIsland('❌', '資料載入異常');
+      });
+
+      if (!skipFaceId) {
+          setTimeout(() => {
+              document.getElementById('lock-text').innerText = '身分確認：最尊貴的母后大人';
+              document.getElementById('lock-text').style.color = '#34d399';
+              document.getElementById('lock-text').classList.remove('animate-pulse');
+              document.getElementById('scan-line').style.display = 'none';
+              triggerVibration('success');
               
               setTimeout(() => {
-                  document.getElementById('lock-text').innerText = '身分確認：最尊貴的母后大人';
-                  document.getElementById('lock-text').style.color = '#34d399';
-                  document.getElementById('lock-text').classList.remove('animate-pulse');
-                  document.getElementById('scan-line').style.display = 'none';
-                  triggerVibration('success');
-                  
-                  setTimeout(() => {
-                      lockScreen.style.opacity = '0';
-                      document.getElementById('view-home').classList.add('active');
-                      setTimeout(() => { lockScreen.style.display = 'none'; }, 1000);
-                  }, 1000);
-              }, remainingTime); 
-          }
-      }); // fetchPromise end
+                  lockScreen.style.opacity = '0';
+                  document.getElementById('view-home').classList.add('active');
+                  setTimeout(() => { lockScreen.style.display = 'none'; }, 1000);
+              }, 1000);
+          }, 3500); 
+      }
 
       document.addEventListener('pointerdown', () => {
           if(!hasUnlockedAudio) { audio.play().then(() => audio.pause()).catch(()=>{}); mapAudio.play().then(() => mapAudio.pause()).catch(()=>{}); hasUnlockedAudio = true; }
@@ -664,7 +632,6 @@
       }, { once: true });
     };
 
-    // --- 管家 SOS ---
     async function sos(msg) {
         if (isRequesting) return;
         triggerVibration('light');
@@ -684,7 +651,6 @@
         catch(e) { showIsland('❌', '傳送失敗'); } finally { isRequesting = false; }
     }
 
-    // --- 指揮家引擎 ---
     let targetRate = 0, currentRate = 0; let lastX = 0, lastY = 0;
     function requestMotionPermission() {
         if(pressTimer) return;
@@ -726,7 +692,6 @@
         updatePlayback();
     }
 
-    // --- 盲盒與兌換 ---
     function startGacha() {
         if (isGachaRunning) return;
         const available = servicesData.filter(s => s[4] > 0);
