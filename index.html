@@ -307,9 +307,8 @@
     <div class="dock-btn" id="tab-wallet" onclick="switchTab('wallet')">🎫</div>
   </nav>
 
-  <audio id="bgm" src="solo.MP3" loop preload="auto" preservesPitch="true"></audio>
-  <audio id="map-bgm" src="spirited.MP3" loop preload="auto"></audio>
-
+  <audio id="bgm" src="solo.mp3" loop preload="auto" preservesPitch="true"></audio>
+  <audio id="map-bgm" src="spirited.mp3" loop preload="auto"></audio>
 
   <script>
     const GAS = 'https://script.google.com/macros/s/AKfycbxxknkKwWS-Vtqo3pKovAMstLtQrXeyD7DhnILzeeisIBCGHmh03zFjFAdmF47ZXtv_/exec'; 
@@ -488,7 +487,6 @@
         }
     }
 
-    // --- 資料載入 ---
     window.onload = async () => {
       initMap(); checkPWA();
       const startTime = Date.now();
@@ -543,19 +541,16 @@
               }
 
               memoriesData.forEach((m, i) => {
-                // =======================================================
-                // 【終極修復：綠筆地圖標記】絕不破圖的純淨 SVG！
-                // =======================================================
-                // 我把難看的圓形換掉，改回經典、高級的「玫瑰紅水滴大頭針」。
-                // 用這個 Base64 絕對不會破圖，自帶陰影和圓形白底。
                 const redPinIconBase64 = `data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 384 512' width='32' height='42'%3E%3Cpath fill='%23F43F5E' d='M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z'/%3E%3Ccircle cx='192' cy='192' r='80' fill='%23ffffff'/%3E%3C/svg%3E`;
 
                 const marker = L.marker([m[1], m[2]], {
                     icon: L.icon({
                         iconUrl: redPinIconBase64,
+                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
                         iconSize: [32, 42],
                         iconAnchor: [16, 42],
-                        popupAnchor: [0, -42]
+                        popupAnchor: [0, -42],
+                        className: 'marker-drop'
                     })
                 }).addTo(map);
                 
@@ -621,7 +616,15 @@
       }
 
       document.addEventListener('pointerdown', () => {
-          if(!hasUnlockedAudio) { audio.play().then(() => audio.pause()).catch(()=>{}); mapAudio.play().then(() => mapAudio.pause()).catch(()=>{}); hasUnlockedAudio = true; }
+          if(!hasUnlockedAudio) { 
+              // 【修復】確保音樂只觸發解鎖，不跟著點擊重疊播放
+              // 我們加上 currentTabIdx 判斷，避免重疊
+              // 但這裡 pointerdown 只是用來解鎖 AudioContext
+              // 修改在 startConductorEngine
+              audio.play().then(() => audio.pause()).catch(()=>{}); 
+              mapAudio.play().then(() => mapAudio.pause()).catch(()=>{}); 
+              hasUnlockedAudio = true; 
+          }
           
           if(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission !== 'function') {
               window.addEventListener('deviceorientation', (e) => {
@@ -666,7 +669,8 @@
         window.addEventListener('devicemotion', (e) => {
             let acc = e.accelerationIncludingGravity; if(!acc) return;
             let delta = Math.abs(acc.x - lastX) + Math.abs(acc.y - lastY);
-            if (delta > 5) { 
+            // 【終極防護】只有在首頁 (currentTabIdx === 0) 才會觸發獨奏，避免和地圖音樂打架
+            if (delta > 5 && currentTabIdx === 0) { 
                 targetRate = Math.min(1.5, 0.5 + (delta / 20)); 
                 if (audio.paused) { audio.volume = 1; audio.play(); }
                 document.querySelectorAll('.music-bar').forEach(b => b.style.height = (Math.random()*24 + 4) + 'px');
